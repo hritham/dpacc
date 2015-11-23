@@ -189,18 +189,19 @@ typedef void (*g_flow_cbk_packet_received_fn) (
         void *cbk_arg1,
         void *cbk_arg2);
 
-/*! Table flow entry information. TBD might required to add more fields*/
-struct g_flow_table_flow_entry {
-        uint8_t  table_id; /**< Table ID from which packet is received */
-        uint16_t priority; /**< priority of flow */
-        uint32_t match_field_len; /**< Number of match fields */
-        uint32_t  *match_fields; /**< Array of match field IDs of the flow table */
+/*! Table removed flow entry information*/
+struct g_flow_table_removed_flow_entry {
+        uint8_t  table_id; /**< Table ID of flow entry removed*/
+        uint32_t priority; /**< priority of flow entry */
+        uint32_t match_field_len; /**< Length of 'match_fields' buffer */
+        uint8_t  *match_fields; /**< Pointer to match fields buffer contains list of match field values, 
+                                    each will be created and accessed by using 'struct g_flow_match_field'*/
 };
 
 /*! Callback function prototype that application can provide to receive flow removed event from virtual flow acclerator */
 typedef void (*g_flow_cbk_flow_removed_fn) (
         struct g_flow_handle *handle,
-	struct g_flow_table_flow_entry *in, /**> Flow entry that actually removed from table*/
+	struct g_flow_table_removed_flow_entry *in, /**> Flow entry that removed from table*/
         void *cbk_arg1,
         void *cbk_arg2);
 
@@ -221,24 +222,20 @@ struct g_flow_table_notification_hooks
 	void *flow_rmvd_cbarg_arg2;
 };
 
+/*! Table Match field information */
+struct g_flow_match_field_info {
+  uint32_t id; /**< Match Field Id  TBD defining list of match fields supported*/
+  uint8_t  is_optional; /**< TRUE - if field is optional, FALSE - if field is mandatory */ 
+};
+
 /*! Table configuration values for the virtual flow acclerator */ 
 struct g_flow_table_config_inargs {
   uint8_t id; /**< Table Id value, it can be any value between 0 and 254, it must be unique for the given virtual flow acclerator */ 
   char name[G_FLOW_MAX_TABLE_NAME_LEN]; /**< Name of the table */
   uint32_t max_records; /**< Maximum number of flow records that supported by the table */
+  uint32_t match_fields_cnt; /**< Total number of match fields supported by the table */
+  struct g_flow_match_field_info *match_field_info;
   struct g_flow_table_notification_hooks *cbk_hook_fns; /**< Pointer to input structure containing notitication callback function and arguments*/
-};
-
-/*! Table match field configuration values for the given table */ 
-struct g_flow_table_match_field_config_inargs {
-  uint32_t id; /**< Match Field Id  TBD defining list of match fields supported*/
-  uint8_t  is_optional; /**< TRUE - if field is optional, FALSE - if field is mandatory */ 
-};
-
-/*! Table Match field infourmation */
-struct g_flow_match_field_info {
-  uint32_t id; /**< Match Field Id  TBD defining list of match fields supported*/
-  uint8_t  is_optional; /**< TRUE - if field is optional, FALSE - if field is mandatory */ 
 };
 
 /*! Flow Table information */ 
@@ -270,6 +267,34 @@ struct g_flow_tables_get_outargs {
 	  * invoke for the next set of tables */
 	bool b_more_tables;
 	/**< Set if more tables are available */
+};
+
+/*! Format of each match field values as part of match_fileds buffer created in the table flow entry */
+struct g_flow_match_field {
+        uint32_t id; /**< Match field ID */
+        uint32_t length; /**< Length of match field value, it will be doubled in case mask value present  */
+        uint8_t  is_mask_set; /**< TRUE means mask value is present after the match field value */
+        uint8_t pad[7];
+        uint8_t value[0]; /**< Match field value followed by mask if mask set*/ 
+};
+
+/* ! Format of each instructions values as part of instructions  bufffer of the table flow entry */
+struct g_flow_instructions {
+       uint32_t id; /**< Instruction ID */
+       uint32_t length; /**< Length of instruction value */ 
+       uint8_t  value[0]; /**< Instruction value */ 
+};
+
+/*! Table flow entry information. TBD more fields */
+struct g_flow_table_flow_entry {
+        uint32_t priority; /**< priority of flow entry */
+        uint32_t match_field_len; /**< Length of 'match_fields' buffer */
+        uint8_t  *match_fields; /**< Pointer to match fields buffer contains list of match field values, 
+                                    each will be created and accessed by using 'struct g_flow_match_field'*/
+        uint32_t instruction_len;/**< Length of instruction values supported  by the flow entry*/
+        uint8_t  *insturctions; /**< Pointer to instruction buffer contains list of instructions suppored by the flow entry,
+                                     each instruction value be created and accessed by using 'struct g_flow_instructions' */
+        uint8_t pad[2];
 };
 
 /*! Function prototypes */
@@ -379,18 +404,12 @@ int32_t g_flow_ports_get_info(struct g_flow_handle *handle,
  * 
  * @param[in] table_cnfg - Pointer to table  configuration values.
  *
- * @param[in] match_fields_cnt - Total number of match fileds configuring for the table 
- *
- * @param[in] match_fields_cnfg - Array of pointers, where each points to match field configurion value for the table 
- *
  * @returns SUCCESS upon SUCCESS or FAILURE
  *
  * @ingroup VIRTIO_FLOW
  */
 int32_t g_flow_table_add(struct g_flow_handle *handle,
-                         struct g_flow_table_config_inargs *table_cnfg,
-                         uint32_t match_fields_cnt,
-                         struct g_flow_table_match_field_config_inargs *match_fields_cnfg);
+                         struct g_flow_table_config_inargs *table_cnfg);
 /*! 
  * @brief After completing configuration the accelerator, usually after adding all tables, applications calls this API.
  *

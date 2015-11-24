@@ -56,6 +56,7 @@
 /*! Maximum table name length possible */
 #define G_FLOW_MAX_TABLE_NAME_LEN 32
 
+
 /*! Enumerations */
 
 /* Enums of Port status change event types */
@@ -63,6 +64,14 @@ enum g_flow_port_status_event {
         G_FLOW_PORT_ADD = 0, /**< Port added */
         G_FLOW_PORT_MOD = 1, /**< Earlier added Port is modified */
         G_FLOW_PORT_DEL = 2, /**< Earlier added Port to deleted */
+};
+
+/*Enums of Reponse code. When application send a query from the accelerator,
+  the response will come as part of callback function that passed as part of request with status as defined in enums*/
+enum g_flow_response_status {
+     G_FLOW_RESPONSE_STATUS_SUCCESS =1  /**< Response code indicate that success in getting response*/,
+     G_FLOW_RESPONSE_STATUS_ERROR   =2  /**< Response code indicate that error in getting response*/,
+     G_FLOW_RESPONSE_STATUS_TIMEOUT =3  /**< Response code indicate that earlier request was timed out*/ 
 };
 
 /*! Get Available flow devices inArgs */
@@ -80,7 +89,7 @@ struct g_flow_device_info {
 
 /*! Avaialble flow devices get outArgs */
 struct g_flow_avail_devices_get_outargs {
-	uint32_t num_devices; /**< number of devices to get */
+	uint32_t num_devices; /**< number of devices recieved */
 	struct g_flow_device_info *dev_info; 						
 	/**< Array of pointers, where each points to device specific information */
 	char *last_device_read; 
@@ -194,8 +203,8 @@ struct g_flow_table_removed_flow_entry {
         uint8_t  table_id; /**< Table ID of flow entry removed*/
         uint32_t priority; /**< priority of flow entry */
         uint32_t match_field_len; /**< Length of 'match_fields' buffer */
-        uint8_t  *match_fields; /**< Pointer to match fields buffer contains list of match field values, 
-                                    each will be created and accessed by using 'struct g_flow_match_field'*/
+        uint8_t  *match_fields; /**< Pointer to match fields buffer contains list of match field values,
+                                    Each field is defined with 'struct g_flow_match_field'*/
 };
 
 /*! Callback function prototype that application can provide to receive flow removed event from virtual flow acclerator */
@@ -258,7 +267,7 @@ struct g_flow_tables_get_inargs {
 
 /*! Flow tables information get outArgs */
 struct g_flow_tables_get_outargs {
-	uint32_t num_tables; /**< number of tables to get */
+	uint32_t num_tables; /**< number of tables returned */
 	struct g_flow_table_info *table_info; 						
 	/**< Array of pointers, where each points to
 	    table specific information */
@@ -285,17 +294,70 @@ struct g_flow_instructions {
        uint8_t  value[0]; /**< Instruction value */ 
 };
 
-/*! Table flow entry information. TBD more fields */
-struct g_flow_table_flow_entry {
-        uint32_t priority; /**< priority of flow entry */
-        uint32_t match_field_len; /**< Length of 'match_fields' buffer */
+/*! Select a flow entry in a table*/
+struct g_flow_table_flow_entry_selector {
+        uint32_t priority; /**< Priority value of flow entry, higher number indicates higher priority 
+                                Minimum valid priority value  in flow entry addition is 1, Priority value 0 indicates the priority value
+                                is not used as parameter in the selection for flow entires. */
+        uint32_t match_field_len; /**< Length of 'match_fields' buffer, zero value no match fields in the selection of flow entries*/
         uint8_t  *match_fields; /**< Pointer to match fields buffer contains list of match field values, 
                                     each will be created and accessed by using 'struct g_flow_match_field'*/
+};
+
+/*! Table flow entry information used as input argument value in the addition and modification of flow entry API
+    In case of modification replaces 'inactivity_timeout' and 'insturctions' values of selected
+    selected flow entires */
+struct g_flow_table_add_n_mod_flow_entry_inargs {
+        uint8_t  table_id; /**< Table ID to which adding or modifying flow */
+        struct g_flow_table_flow_entry_selector flow_selector; /**< Table flow entry selector values */ 
+        uint32_t inactivity_timeout; /**< Flow inactivity timeout value in secs. Zero means no timeout*/
         uint32_t instruction_len;/**< Length of instruction values supported  by the flow entry*/
         uint8_t  *insturctions; /**< Pointer to instruction buffer contains list of instructions suppored by the flow entry,
-                                     each instruction value be created and accessed by using 'struct g_flow_instructions' */
-        uint8_t pad[2];
+                                     each instruction value will be created and accessed by using 'struct g_flow_instructions' */
 };
+
+/* ! Flow entry deletion function in_args */
+struct g_flow_table_del_flow_entires_inarg {
+        uint8_t  table_id;  /** <Table Id from which deleting flow entries*/
+        struct g_flow_table_flow_entry_selector *flow_selector; /** < Selector values, selected flow entries deleted */  
+};
+
+/* ! Details for table flow entry */
+struct g_flow_table_flow_entry{
+        uint32_t priority; /**< priority value of flow entry */
+        uint32_t match_field_len; /**< Length of 'match_fields' buffer*/
+        uint8_t  *match_fields; /**< Pointer to match fields buffer contains list of match field values, 
+                                    each will be accessed by using 'struct g_flow_match_field'*/
+        uint32_t inactivity_timeout; /**< Flow inactivity timeout value in secs. Zero means no timeout*/
+        uint32_t instruction_len;/**< Length of instruction values supported  by the flow entry*/
+        uint8_t  *insturctions; /**< Pointer to instruction buffer contains list of instructions suppored by the flow entry,
+                                     each instruction value will be created and accessed by using 'struct g_flow_instructions' */
+};
+
+/* ! Flow entry receive callback function in_args , parameters passed to flow entries received callback function */
+struct g_flow_table_flow_entires_inarg {
+        uint8_t table_id; /** < Table id to which the flow entries belongs*/
+        enum g_flow_response_status response_status; /** <Response status of earlier flow request */
+        uint32_t number_of_flow_entries; /** < Number of flow entries returned in this iteration */
+        struct g_flow_table_flow_entry *flow_entries; /**< Array of pointers, where each points to flow entry specific information */
+        uint8_t more_entries; /** < TRUE indicates, this is not final response and more flow entries yet to come*/
+        void *cbk_arg1;
+        void *cbk_arg2;
+};
+
+/*! Callback function prototype that application can provide to receive selected flow entries of a table in the accelerator */
+typedef void (*g_flow_cbk_flow_entries_received_fn) (
+        struct g_flow_handle *handle,
+        struct g_flow_table_flow_entires_inarg *in);
+
+/* ! Get Flow entries function in_args */
+struct g_flow_table_get_flow_entires_inarg {
+        uint8_t  table_id;  /** <Table Id from which getting flow entries*/
+        struct g_flow_table_flow_entry_selector *flow_selector; /** < Selector values, all selected flow entries passed to 
+                                                                      callback function asynchronusly */  
+        g_flow_cbk_flow_entries_received_fn *flow_rcv_cbk; /** Pointer to callback function to receive flow entries */
+};
+
 
 /*! Function prototypes */
 /*! 
@@ -448,10 +510,69 @@ int32_t g_flow_tables_get_num(struct g_flow_handle *handle,
  *
  * @ingroup VIRTIO_FLOW
  */
-int32_t g_flow_tables_get_info(struct g_flow_handle *handle,
+int32_t g_flow_tables_info_get(struct g_flow_handle *handle,
                                struct g_flow_tables_get_inargs *in,
 	                       struct g_flow_tables_get_outargs *out);
+
 /*!
+ * @brief  Add flow entry into given table of a virtual flow accelerator  
+ *
+ * @param[in] handle- virtual flow accelerator handle 
+ *
+ * @param[in] in -  Pointer to input structure contains flow entry details
+ *
+ * @returns SUCCESS upon SUCCESS or failure 
+ *
+ * @ingroup VIRTIO_FLOW
+ */
+int32_t g_flow_table_flow_entry_add(struct g_flow_handle *handle,
+                                    struct g_flow_table_add_n_mod_flow_entry_inargs *in);
+/*!
+ * @brief  Modify flow entry of a table in a virtual flow accelerator  
+ *
+ * @param[in] handle- virtual flow accelerator handle 
+ *
+ * @param[in] in -  Pointer to input structure contains flow entry details
+ *
+ * @returns SUCCESS upon SUCCESS or failure 
+ *
+ * @ingroup VIRTIO_FLOW
+ */
+int32_t g_flow_table_flow_entry_modify(struct g_flow_handle *handle,
+                                       struct g_flow_table_add_n_mod_flow_entry_inargs *in);
+
+
+/*!
+ * @brief  Delete a selected flow entres of a table in a virtual flow accelerator  
+ *
+ * @param[in] handle- virtual flow accelerator handle 
+ *
+ * @param[in] in -  Pointer to input structure contains flow entry selector details 
+ *
+ * @returns SUCCESS upon SUCCESS or failure 
+ *
+ * @ingroup VIRTIO_FLOW
+ */
+int32_t g_flow_table_flow_entry_delete(struct g_flow_handle *handle,
+                                       struct g_flow_table_del_flow_entires_inarg *in);
+
+/*! 
+ * @brief Get flow entry details of for the required selctor value s of a virtual flow accelerator 
+ *
+ * @param[in] handle- virtual flow accelerator handle 
+ *
+ * @param[in] in -  Pointer to input structure contains flow entry selectors, callbacks, etc.  
+ *
+ * @returns SUCCESS upon SUCCESS or FAILURE
+ *
+ * @ingroup VIRTIO_FLOW
+ */
+int32_t g_flow_table_flow_entry_get(struct g_flow_handle *handle,
+                                    struct g_flow_table_get_flow_entires_inarg *in);
+
+/*!
+ * @brief Close a previously opened  virtual flow accelerator device  
+ *
  * @brief Close a previously opened  virtual flow accelerator device  
  *
  * @param[in] handle- virtual flow accelerator handle 
@@ -460,7 +581,6 @@ int32_t g_flow_tables_get_info(struct g_flow_handle *handle,
  *
  * @ingroup VIRTIO_FLOW
  */
-
 int32_t g_flow_device_close(struct g_flow_handle *handle);
 
 #endif

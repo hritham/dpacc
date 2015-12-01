@@ -56,17 +56,25 @@
 /*! Maximum table name length possible */
 #define G_FLOW_MAX_TABLE_NAME_LEN 32
 
+#define G_FLOW_MATCH_HEADER__(ID, MASK, LENGTH) (((ID) << 9) | ((MASK) << 8) | (LENGTH))
+
+/*! Match field header with mask not set */
+#define G_FLOW_MATCH_HEADER(ID, LENGTH) MATCH_HEADER__(ID, 0, LENGTH)
+
+/*! Match field header with mask set */
+#define G_FLOW_MATCH_HEADER_MASK_SET(ID, LENGTH) MATCH_HEADER__(ID, 1, (LENGTH) * 2)
+
 
 /*! Enumerations */
 
-/* Enums of Port status change event types */
+/*! Enums of Port status change event types */
 enum g_flow_port_status_event {
         G_FLOW_PORT_ADD = 0, /**< Port added */
         G_FLOW_PORT_MOD = 1, /**< Earlier added Port is modified */
         G_FLOW_PORT_DEL = 2, /**< Earlier added Port to deleted */
 };
 
-/*Enums of Reponse code. When application send a query from the accelerator,
+/*! Enums of Reponse code. When application send a query from the accelerator,
   the response will come as part of callback function that passed as part of request with status as defined in enums*/
 enum g_flow_response_status {
      G_FLOW_RESPONSE_STATUS_SUCCESS =1  /**< Response code indicate that success in getting response*/,
@@ -74,11 +82,119 @@ enum g_flow_response_status {
      G_FLOW_RESPONSE_STATUS_TIMEOUT =3  /**< Response code indicate that earlier request was timed out*/ 
 };
 
-/*Enums of virtual flow accelerator objects */
+/*! Enums of virtual flow accelerator objects */
 enum g_flow_objects {
     G_FLOW_GROUP_OBJECT = 0, /**<< Flow Group Object */
     G_FLOW_METER_OBJECT = 1  /**< Flow Meter Object */
 };
+
+/*! Enums of match fields , TBD of more fields*/
+enum g_flow_match_fields {
+    G_FLOW_IN_PORT_ID        = 0,  /* Input port. */
+    G_FLOW_IN_PHY_PORT_ID    = 1,  /* Physical input port. */
+    G_FLOW_METADATA_ID       = 2,  /* Metadata passed between tables. */
+    G_FLOW_ETH_DST_ID        = 3,  /* Ethernet destination address. */
+    G_FLOW_ETH_SRC_ID        = 4,  /* Ethernet source address. */
+    G_FLOW_ETH_TYPE_ID       = 5,  /* Ethernet frame type. */
+    G_FLOW_IP_PROTO_ID       = 10, /* IP protocol. */
+    G_FLOW_IPV4_SRC_ID       = 11, /* IPv4 source address. */
+    G_FLOW_IPV4_DST_ID       = 12, /* IPv4 destination address. */
+    G_FLOW_TCP_SRC_ID        = 13, /* TCP source port. */
+    G_FLOW_TCP_DST_ID        = 14, /* TCP destination port. */
+    G_FLOW_UDP_SRC_ID        = 15, /* UDP source port. */
+    G_FLOW_UDP_DST_ID        = 16, /* UDP destination port. */
+    G_FLOW_ICMPV4_TYPE_ID    = 19, /* ICMP type. */
+    G_FLOW_ICMPV4_CODE_ID    = 20, /* ICMP code. */
+    G_FLOW_ARP_OP_ID         = 21, /* ARP opcode. */
+    G_FLOW_ARP_SPA_ID        = 22, /* ARP source IPv4 address. */
+    G_FLOW_ARP_TPA_ID        = 23, /* ARP target IPv4 address. */
+    G_FLOW_ARP_SHA_ID        = 24, /* ARP source hardware address. */
+    G_FLOW_ARP_THA_ID        = 25, /* ARP target hardware address. */
+};
+
+
+/*! Enums of actions ,TBD more actions */
+enum g_flow_actions {
+    G_FLOW_AT_SET_PKT_FIELD = 0, /* Set specific field value of the packet */
+    G_FLOW_AT_NEXT_TABLE    = 2, /* Send the packet to next specified table */
+    G_FLOW_AT_TRIGGER_FLOW_STATS = 3, /* Trigger an event when packet/byte stats of flow entry reached some threshold value*/ 
+    G_FLOW_AT_RATE_LIMIT    = 3, /* Packet Rate limiter action by using meter objects */
+    G_FLOW_AT_SET_PRIORITY_QUEUE =4, /* Set Prirority queue that used before transmitting packet on port */
+    G_FLOW_AT_XMIT_ON_PORT  = 5, /* Send packet to required port */
+
+   /*TBD push and pop tunnel headers*/
+   /* TBD  G_FLOW_AT_COPY_FIELD    = 1, equal to set meta data from pkt  Copy between header and registers , need to bring packet registers field support*/
+};
+                  
+
+/*! Packet Input port match field header*/
+#define G_FLOW_IN_PORT    G_FLOW_MATCH_HEADER(G_FLOW_IN_PORT_ID, 4)
+
+/*! Packet Input physical port match field header */
+#define G_FLOW_IN_PHY_PORT    G_FLOW_MATCH_HEADER(G_FLOW_IN_PHY_PORT_ID, 4)
+
+/*! Meta data  match field header */
+#define G_FLOW_META_DATA             G_FLOW_MATCH_HEADER(G_FLOW_METADATA_ID, 8)
+#define G_FLOW_META_DATA_MASK_SET    G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_METADATA_ID, 8)
+
+/*! Ethernet destination address  match field header */
+#define G_FLOW_ETH_DST             G_FLOW_MATCH_HEADER(G_FLOW_ETH_DST_ID, 6)
+#define G_FLOW_ETH_DST_MASK_SET    G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_ETH_DST_ID, 6)
+
+/*! Ethernet source address  match field header */
+#define G_FLOW_ETH_SRC             G_FLOW_MATCH_HEADER(G_FLOW_ETH_SRC_ID, 6)
+#define G_FLOW_ETH_SRC_MASK_SET    G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_ETH_SRC_ID, 6)
+
+/*! Ethernet type  match field header */
+#define G_FLOW_ETH_TYPE             G_FLOW_MATCH_HEADER(G_FLOW_ETH_TYPE_ID, 2)
+
+/*! IP Porotocol  match field header */
+#define G_FLOW_IP_PROTO             G_FLOW_MATCH_HEADER(G_FLOW_IP_PROTO_ID, 1)
+
+/*! IPV4 source address  match field header */
+#define G_FLOW_IPV4_SRC             G_FLOW_MATCH_HEADER(G_FLOW_IPV4_SRC_ID, 4)
+#define G_FLOW_IPV4_SRC_MASK_SET    G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_IPV4_SRC_ID, 4)
+
+/*! IPV4 destination address  match field header */
+#define G_FLOW_IPV4_DST             G_FLOW_MATCH_HEADER(G_FLOW_IPV4_DST_ID, 4)
+#define G_FLOW_IPV4_DST_MASK_SET    G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_IPV4_DST_ID, 4)
+
+/*! TCP Source Port match field header */
+#define G_FLOW_TCP_SRC            G_FLOW_MATCH_HEADER(G_FLOW_TCP_SRC_ID, 2)
+
+/*! TCP Destination  Port match field header */
+#define G_FLOW_TCP_DST            G_FLOW_MATCH_HEADER(G_FLOW_TCP_DST_ID, 2)
+
+/*! UDP Source  Port match field header */
+#define G_FLOW_UDP_SRC            G_FLOW_MATCH_HEADER(G_FLOW_UDP_SRC_ID, 2)
+
+/*! UDP Destination  Port match field header */
+#define G_FLOW_UDP_DST            G_FLOW_MATCH_HEADER(G_FLOW_UDP_DST_ID, 2)
+
+/*! ICPMV4 Type match field header */
+#define G_FLOW_ICMPV4_TYPE        G_FLOW_MATCH_HEADER(G_FLOW_ICMPV4_TYPE_ID, 1)
+
+/*! ICPMV4 Code match field header */
+#define G_FLOW_ICMPV4_CODE        G_FLOW_MATCH_HEADER(G_FLOW_ICMPV4_CODE_ID, 1)
+
+/*! ARP Header OP Code match field header */
+#define G_FLOW_ARP_OP            G_FLOW_MATCH_HEADER(G_FLOW_ARP_OP, 2)
+
+/*! ARP Header Source Protocol address */
+#define G_FLOW_ARP_SPA           G_FLOW_MATCH_HEADER(G_FLOW_ARP_SPA_ID, 4)
+#define G_FLOW_ARP_SPA_MASK_SET  G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_ARP_SPA_ID, 4)
+
+/*! ARP Header Destination  Protocol address */
+#define G_FLOW_ARP_DPA           G_FLOW_MATCH_HEADER(G_FLOW_ARP_DPA_ID, 4)
+#define G_FLOW_ARP_DPA_MASK_SET  G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_ARP_DPA_ID, 4)
+
+/*! ARP Header Source  Hardware address */
+#define G_FLOW_ARP_SHA           G_FLOW_MATCH_HEADER(G_FLOW_ARP_SHA_ID, 6)
+#define G_FLOW_ARP_SHA_MASK_SET  G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_ARP_SHA_ID, 6)
+
+/*! ARP Header Target  Hardware address */
+#define G_FLOW_ARP_THA           G_FLOW_MATCH_HEADER(G_FLOW_ARP_THA_ID, 6)
+#define G_FLOW_ARP_THA_MASK_SET  G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_ARP_THA_ID, 6)
 
 /*! Get Available flow devices inArgs */
 struct g_flow_avail_devices_get_inargs {
@@ -140,8 +256,7 @@ struct g_flow_ports_get_inargs {
 struct g_flow_ports_get_outargs {
 	uint32_t num_ports; /**< number of ports to get */
 	struct g_flow_port_info *port_info; 						
-	/**< Array of pointers, where each points to
-	    port specific information */
+	/**< Array of pointers, where each points to port specific information */
 	char *last_port_read; 
 	/**< Send a value that the application can use and
 	  * invoke for the next set of ports */
@@ -155,7 +270,7 @@ struct g_flow_ports_get_outargs {
 typedef void (*g_flow_cbk_accelator_associated_fn) (
         char *flow_virtual_accel_name,
         char *accel_application_name,
-        void *cbk_arg1,
+        void *cbk_arg1, 
         void *cbk_arg2);
 
 /*! Port status change event info*/
@@ -286,18 +401,17 @@ struct g_flow_tables_get_outargs {
 
 /*! Format of each match field values as part of match_fileds buffer created in the table flow entry */
 struct g_flow_match_field {
-        uint32_t id; /**< Match field ID */
-        uint32_t length; /**< Length of match field value, it will be doubled in case mask value present  */
-        uint8_t  is_mask_set; /**< TRUE means mask value is present after the match field value */
-        uint8_t pad[7];
-        uint8_t value[0]; /**< Match field value followed by mask if mask set*/ 
+        uint16_t id:7; /**< Match field ID */
+        uint16_t mask:1; /**< TRUE means mask value is present after the match field value */
+        uint16_t length:8; /**< Length of match field value, it will be doubled in case of mask value present  */
+        uint8_t value[0]; /**< Match field value. Along with match field value 'mask value'  will also present if 'mask' value is TRUE*/ 
 };
 
-/* ! Format of each instructions values as part of instructions  bufffer of the table flow entry */
-struct g_flow_instructions {
-       uint32_t id; /**< Instruction ID */
-       uint32_t length; /**< Length of instruction value */ 
-       uint8_t  value[0]; /**< Instruction value */ 
+/* ! Format of each action value as part of actions  bufffer of the table flow entry */
+struct g_flow_action {
+       uint32_t id; /**< Action ID */
+       uint32_t length; /**< Length of action value */ 
+       uint8_t  value[0]; /**< Action value, each action will have diffeent size */ 
 };
 
 /*! Select a flow entry in a table*/
@@ -306,38 +420,50 @@ struct g_flow_table_flow_entry_selector {
                                 Minimum valid priority value  in flow entry addition is 1, Priority value 0 indicates the priority value
                                 is not used as parameter in the selection for flow entires. */
         uint32_t match_field_len; /**< Length of 'match_fields' buffer, zero value no match fields in the selection of flow entries*/
-        uint8_t  *match_fields; /**< Pointer to match fields buffer contains list of match field values, 
+        uint8_t  *match_fields; /**< Pointer to list of variable size match field values, 
                                     each will be created and accessed by using 'struct g_flow_match_field'*/
 };
 
 /*! Table flow entry information used as input argument value in the addition and modification of flow entry API
-    In case of modification replaces 'inactivity_timeout' and 'insturctions' values of selected
+    In case of modification replaces 'inactivity_timeout' and 'action' values of selected
     selected flow entires */
 struct g_flow_table_add_n_mod_flow_entry_inargs {
         uint8_t  table_id; /**< Table ID to which adding or modifying flow */
         struct g_flow_table_flow_entry_selector flow_selector; /**< Table flow entry selector values */ 
+        uint64_t user_opq_val;  /** <Opaque value, for flow api,  as part of flow entry, to store application specific information*/
+        uint64_t user_opq_mask;  /** <Mask used to restrict the 'user_opq_val' bits,*/
         uint32_t inactivity_timeout; /**< Flow inactivity timeout value in secs. Zero means no timeout*/
-        uint32_t instruction_len;/**< Length of instruction values supported  by the flow entry*/
-        uint8_t  *insturctions; /**< Pointer to instruction buffer contains list of instructions suppored by the flow entry,
-                                     each instruction value will be created and accessed by using 'struct g_flow_instructions' */
+        uint32_t actions_len;/**< Length of actions supported  by the flow entry*/
+        uint8_t  *actions; /**< Pointer to list of variable size action values of flow entry,
+                                each action value will be created and accessed by using 'struct g_flow_action' */
 };
 
 /* ! Flow entry deletion function in_args */
 struct g_flow_table_del_flow_entires_inarg {
         uint8_t  table_id;  /** <Table Id from which deleting flow entries*/
-        struct g_flow_table_flow_entry_selector *flow_selector; /** < Selector values, selected flow entries deleted */  
+        struct g_flow_table_flow_entry_selector *flow_selector; /** < Selector values, selected flow entries are deleted */  
 };
 
 /* ! Details for table flow entry */
 struct g_flow_table_flow_entry{
         uint32_t priority; /**< priority value of flow entry */
         uint32_t match_field_len; /**< Length of 'match_fields' buffer*/
-        uint8_t  *match_fields; /**< Pointer to match fields buffer contains list of match field values, 
+        uint8_t  *match_fields; /**< Pointer to list of variable size match field values, 
                                     each will be accessed by using 'struct g_flow_match_field'*/
+
+        uint64_t user_opq_val;  /** <Opaque value, for flow api,  as part of flow entry, to store application specific information*/
+        uint64_t user_opq_mask;  /** <Mask used to restrict the 'user_opq_val' bits,*/
+
         uint32_t inactivity_timeout; /**< Flow inactivity timeout value in secs. Zero means no timeout*/
-        uint32_t instruction_len;/**< Length of instruction values supported  by the flow entry*/
-        uint8_t  *insturctions; /**< Pointer to instruction buffer contains list of instructions suppored by the flow entry,
-                                     each instruction value will be created and accessed by using 'struct g_flow_instructions' */
+
+        uint64_t num_of_pkts_proc /**< Number of Packetes processed by the flow */
+        uint64_t num_of_bytes_proc; /** < Number of bytes processed the the flow */
+        uint64_t first_pkt_time; /** <System up time in seconds at which first packet hit the flow */        
+        uint64_t last_pkt_time; /** <System up time in seconds at which last packet hit the flow */        
+
+        uint32_t actions_len;/**< Length of actions values supported  by the flow entry*/
+        uint8_t  *actions; /**< Pointer to list of, variable size, action values of flow entry,
+                                each action value will be accessed by using 'struct g_flow_action' */
 };
 
 /* ! Flow entry receive callback function in_args , parameters passed to flow entries received callback function */
@@ -345,10 +471,10 @@ struct g_flow_table_flow_entires_cbk_inarg {
         uint8_t table_id; /** < Table id to which the flow entries belongs*/
         enum g_flow_response_status response_status; /** <Response status of earlier flow request */
         uint32_t number_of_flow_entries; /** < Number of flow entries returned in this iteration */
-        struct g_flow_table_flow_entry *flow_entries; /**< Array of pointers, where each points to flow entry specific information */
+        struct g_flow_table_flow_entry *flow_entries; /**< Array contains list of flow entry details */
         uint8_t more_entries; /** < TRUE indicates, this is not final response and more flow entries yet to come*/
-        void *cbk_arg1;
-        void *cbk_arg2;
+        void *cbk_arg1; /** <Application callback argument 1 */
+        void *cbk_arg2; /** <Application callback argument 2 */
 };
 
 /*! Callback function prototype that application can provide to receive selected flow entries of a table in the accelerator */
@@ -361,13 +487,13 @@ struct g_flow_table_get_flow_entires_inarg {
         uint8_t  table_id;  /** <Table Id from which getting flow entries*/
         struct g_flow_table_flow_entry_selector *flow_selector; /** < Selector values, all selected flow entries passed to 
                                                                       callback function asynchronusly */  
-        g_flow_cbk_flow_entries_received_fn *flow_rcv_cbk; /**< Pointer to callback function to receive flow entries */
-        void *cbk_arg1;
-        void *cbk_arg2;
+        g_flow_cbk_flow_entries_received_fn *flow_rcv_cbk; /** < Pointer to callback function to receive flow entries */
+        void *cbk_arg1; /** <Application callback argument 1 */
+        void *cbk_arg2; /** <Application callback argument 2 */
 };
 
 /*! Group object, data-structure used for Object type 'G_FLOW_GROUP_OBJECT' */
-struct g_flow_meter_object {
+struct g_flow_group_object {
        uint32_t id; /**< Id of the group object, it MUST be unique value */
 
 /*TBD of adding more fields */
@@ -392,8 +518,8 @@ struct g_flow_object_entry_cbk_inarg {
        enum g_flow_response_status response_status; /** <Response status of earlier object request */
        uint32_t type; /** Type of object */
        void *object; /**< Pointer to object entry contains earlier requested object  details  */ 
-       void *cbk_arg1;
-       void *cbk_arg2;
+       void *cbk_arg1; /** <Application callback argument 1 */
+       void *cbk_arg2; /** <Application callback argument 2 */
 };
 
 /*Callback function proototype to received object details */
@@ -406,8 +532,8 @@ struct g_flow_get_object_inargs {
        uint32_t id; /**< Id of the object to get details */
        uint32_t type; /**< object type  */
        g_flow_cbk_object_entries_received_fn *object_rcv_cbk; /**< Pointer to callback function to received object details */
-       void *cbk_arg1;
-       void *cbk_arg2;
+       void *cbk_arg1; /** <Application callback argument 1 */
+       void *cbk_arg2; /** <Application callback argument 2 */
 };
 
 /*! Function prototypes */
@@ -675,7 +801,7 @@ int32_t g_flow_object_entry_delete(struct g_flow_handle *handle,
 int32_t g_flow_object_entry_get(struct g_flow_handle *handle,
                                 struct g_flow_get_object_inargs *in);
 /*
- * @brief  Send packet to virtual flow accelerator. The attached insturctions to packet will be executed at accelerator  
+ * @brief  Send packet to virtual flow accelerator. The attached actions to packet will be executed at accelerator  
  *
  * @param[in] handle- virtual flow accelerator handle 
  *
@@ -683,9 +809,9 @@ int32_t g_flow_object_entry_get(struct g_flow_handle *handle,
  *
  * @param[in] pkt_data  - Pointer to packet data 
  *
- * @param[in] instruction_len - Length of instructions attached to packet data that executed at accelerator
+ * @param[in] action_len - Length of actions attached to packet data that executed at accelerator
  *
- * @param[in] insturctions - Pointer to instruction buffer contains list of instructions  
+ * @param[in] actions - Pointer to action buffer contains list of actions  
  *
  * @returns SUCCESS upon SUCCESS or FAILURE
  *
@@ -694,8 +820,8 @@ int32_t g_flow_object_entry_get(struct g_flow_handle *handle,
 int32_t g_flow_send_packet(struct g_flow_handle *handle,
                            uint32_t pkt_data_len,
                            uint8_t *pkt_data,
-                           uint32_t instruction_len,
-                           uint8_t  *insturctions);
+                           uint32_t action_len,
+                           uint8_t  *actions);
 /*!
  * @brief Close a previously opened  virtual flow accelerator device  
  *

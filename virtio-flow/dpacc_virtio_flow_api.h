@@ -15,12 +15,11 @@
  **/
 
 /*
- * @file dpacc_virtio_flow_api.h
+ * \file dpacc_virtio_flow_api.h
  * 
- * @brief Contains  g_flow_api function declarations & definitions
+ * \brief Contains  g_flow_api function declarations & definitions
  *
- * @addtogroup VIRTIO_FLOW
- * @{
+ * \addtogroup VIRTIO_FLOW
 */
 
 #ifndef _VIRTIO_FLOW_API_H
@@ -56,6 +55,7 @@
 /*! Maximum table name length possible */
 #define G_FLOW_MAX_TABLE_NAME_LEN 32
 
+/* 7 bits Field ID + 1 bit mask + 8 bits length */
 #define G_FLOW_MATCH_HEADER__(ID, MASK, LENGTH) (((ID) << 9) | ((MASK) << 8) | (LENGTH))
 
 /*! Match field header with mask not set */
@@ -67,65 +67,96 @@
 
 /*! Enumerations */
 
+#if 0
 /*! Enums of Port status change event types */
 enum g_flow_port_status_event {
         G_FLOW_PORT_ADD = 0, /**< Port added */
         G_FLOW_PORT_MOD = 1, /**< Earlier added Port is modified */
         G_FLOW_PORT_DEL = 2, /**< Earlier added Port to deleted */
 };
+#endif
+
+/*! Enums of Flow removed reason */
+enum g_flow_flow_removed_reason {
+
+     /** Due to inactivity flow removed*/
+     G_FLOW_REMOVED_TIMEOUT = 0,
+
+     /** Explict request from application to remove flow*/
+     G_FLOW_REMOVED_EXPLICIT = 1,
+};
 
 /*! Enums of Reponse code. When application send a query from the accelerator,
   the response will come as part of callback function that passed as part of request with status as defined in enums*/
 enum g_flow_response_status {
-     G_FLOW_RESPONSE_STATUS_SUCCESS =1  /**< Response code indicate that success in getting response*/,
-     G_FLOW_RESPONSE_STATUS_ERROR   =2  /**< Response code indicate that error in getting response*/,
-     G_FLOW_RESPONSE_STATUS_TIMEOUT =3  /**< Response code indicate that earlier request was timed out*/ 
+
+     /** Response code indicate that success in getting response*/,
+     G_FLOW_RESPONSE_STATUS_SUCCESS =1  
+
+     /** Response code indicate that error in getting response*/,
+     G_FLOW_RESPONSE_STATUS_ERROR   =2  
+
+     /** Response code indicate that earlier request was timed out*/ 
+     G_FLOW_RESPONSE_STATUS_TIMEOUT =3  
 };
 
-/*! Enums of virtual flow accelerator objects */
+/*! Enums of Virtual Flow Accelerator objects */
 enum g_flow_objects {
-    G_FLOW_GROUP_OBJECT = 0, /**<< Flow Group Object */
-    G_FLOW_METER_OBJECT = 1  /**< Flow Meter Object */
+    G_FLOW_OBJECT_METER = 0  /**< Flow Meter Object */
 };
 
 /*! Enums of match fields , TBD of more fields*/
 enum g_flow_match_fields {
-    G_FLOW_IN_PORT_ID        = 0,  /* Input port. */
-    G_FLOW_IN_PHY_PORT_ID    = 1,  /* Physical input port. */
-    G_FLOW_METADATA_ID       = 2,  /* Metadata passed between tables. */
-    G_FLOW_ETH_DST_ID        = 3,  /* Ethernet destination address. */
-    G_FLOW_ETH_SRC_ID        = 4,  /* Ethernet source address. */
-    G_FLOW_ETH_TYPE_ID       = 5,  /* Ethernet frame type. */
-    G_FLOW_IP_PROTO_ID       = 10, /* IP protocol. */
-    G_FLOW_IPV4_SRC_ID       = 11, /* IPv4 source address. */
-    G_FLOW_IPV4_DST_ID       = 12, /* IPv4 destination address. */
-    G_FLOW_TCP_SRC_ID        = 13, /* TCP source port. */
-    G_FLOW_TCP_DST_ID        = 14, /* TCP destination port. */
-    G_FLOW_UDP_SRC_ID        = 15, /* UDP source port. */
-    G_FLOW_UDP_DST_ID        = 16, /* UDP destination port. */
-    G_FLOW_ICMPV4_TYPE_ID    = 19, /* ICMP type. */
-    G_FLOW_ICMPV4_CODE_ID    = 20, /* ICMP code. */
-    G_FLOW_ARP_OP_ID         = 21, /* ARP opcode. */
-    G_FLOW_ARP_SPA_ID        = 22, /* ARP source IPv4 address. */
-    G_FLOW_ARP_TPA_ID        = 23, /* ARP target IPv4 address. */
-    G_FLOW_ARP_SHA_ID        = 24, /* ARP source hardware address. */
-    G_FLOW_ARP_THA_ID        = 25, /* ARP target hardware address. */
+    G_FLOW_FIELD_IN_PORT_ID        = 0,  /* Input port. */
+    G_FLOW_FIELD_IN_PHY_PORT_ID    = 1,  /* Physical input port. */
+    G_FLOW_FIELD_METADATA_ID       = 2,  /* Metadata passed between tables. */
+    G_FLOW_FIELD_ETH_DST_ID        = 3,  /* Ethernet destination address. */
+    G_FLOW_FIELD_ETH_SRC_ID        = 4,  /* Ethernet source address. */
+    G_FLOW_FIELD_ETH_TYPE_ID       = 5,  /* Ethernet frame type. */
+    G_FLOW_FIELD_IP_PROTO_ID       = 10, /* IP protocol. */
+    G_FLOW_FIELD_IPV4_SRC_ID       = 11, /* IPv4 source address. */
+    G_FLOW_FIELD_IPV4_DST_ID       = 12, /* IPv4 destination address. */
+    G_FLOW_FIELD_TCP_SRC_ID        = 13, /* TCP source port. */
+    G_FLOW_FIELD_TCP_DST_ID        = 14, /* TCP destination port. */
+    G_FLOW_FIELD_UDP_SRC_ID        = 15, /* UDP source port. */
+    G_FLOW_FIELD_UDP_DST_ID        = 16, /* UDP destination port. */
+    G_FLOW_FIELD_ICMPV4_TYPE_ID    = 19, /* ICMP type. */
+    G_FLOW_FIELD_ICMPV4_CODE_ID    = 20, /* ICMP code. */
+    G_FLOW_FIELD_ARP_OP_ID         = 21, /* ARP opcode. */
+    G_FLOW_FIELD_ARP_SPA_ID        = 22, /* ARP source IPv4 address. */
+    G_FLOW_FIELD_ARP_TPA_ID        = 23, /* ARP target IPv4 address. */
+    G_FLOW_FIELD_ARP_SHA_ID        = 24, /* ARP source hardware address. */
+    G_FLOW_FIELD_ARP_THA_ID        = 25, /* ARP target hardware address. */
 };
 
 
 /*! Enums of actions ,TBD more actions */
 enum g_flow_actions {
-    G_FLOW_AT_SET_PKT_FIELD = 0, /* Set specific field value of the packet */
-    G_FLOW_AT_NEXT_TABLE    = 2, /* Send the packet to next specified table */
-    G_FLOW_AT_TRIGGER_FLOW_STATS = 3, /* Trigger an event when packet/byte stats of flow entry reached some threshold value*/ 
-    G_FLOW_AT_RATE_LIMIT    = 3, /* Packet Rate limiter action by using meter objects */
-    G_FLOW_AT_SET_PRIORITY_QUEUE =4, /* Set Prirority queue that used before transmitting packet on port */
-    G_FLOW_AT_XMIT_ON_PORT  = 5, /* Send packet to required port */
+
+     /** Set specific field value of the packet */
+     G_FLOW_AT_SET_PKT_FIELD = 0, 
+
+     /** Send the packet to next specified table */
+     G_FLOW_AT_NEXT_TABLE    = 1, 
+
+     /** Trigger an event when packet/byte stats of flow entry reached some threshold value*/ 
+     G_FLOW_AT_TRIGGER_FLOW_STATS = 2, 
+
+     /** Packet Rate limiter action by using meter objects */
+     G_FLOW_AT_RATE_LIMIT    = 3, 
+
+     /** Set Prirority queue that used before transmitting packet on port */
+     G_FLOW_AT_SET_PRIORITY_QUEUE =4, 
+
+     /** Send packet to required port */
+     G_FLOW_AT_XMIT_ON_PORT  = 5, 
 
    /*TBD push and pop tunnel headers*/
-   /* TBD  G_FLOW_AT_COPY_FIELD    = 1, equal to set meta data from pkt  Copy between header and registers , need to bring packet registers field support*/
+   /* TBD  G_FLOW_AT_COPY_FIELD    = 1, equal to set meta data from pkt 
+      Copy between header and registers , need to bring packet registers field support*/
 };
                   
+/*TBD Action Data-Structure, once agreed upon supported actions, will add data-structures*/
 
 /*! Packet Input port match field header*/
 #define G_FLOW_IN_PORT    G_FLOW_MATCH_HEADER(G_FLOW_IN_PORT_ID, 4)
@@ -196,105 +227,434 @@ enum g_flow_actions {
 #define G_FLOW_ARP_THA           G_FLOW_MATCH_HEADER(G_FLOW_ARP_THA_ID, 6)
 #define G_FLOW_ARP_THA_MASK_SET  G_FLOW_MATCH_HEADER_MASK_SET(G_FLOW_ARP_THA_ID, 6)
 
-/*! Get Available flow devices inArgs */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_avail_devices_get_inargs
+* \brief To get Virtual Flow Accelerator devices this passing to g_flow_avail_devices_get_info() as Intargs \n\n
+*/
 struct g_flow_avail_devices_get_inargs {
-	uint32_t num_devices; /**< Number of devices to get */
-	char *last_device_read; 
-	/**< NULL if this is the first time this call is invoked;
-          Subsequent calls will have a valid value here */											  
+
+     /** Number of devices to get */
+     uint32_t num_devices; 
+
+     /** Placed holder for g_flow_avail_devices_get_info() API to return device info,
+      *  Application will allocate the memory before calling the API. The size of 
+      *  array is 'num_devices'. */    
+     struct g_flow_device_info *dev_info; 
+
+     /** NULL if this is the first time this call is invoked. Subsequent calls will 
+      *  have a valid value here */											  
+     char *last_device_read; 
 };
 
-/*! Flow Device information  TBD might reuqired to add more virtual flow accelerator details*/ 
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_device_info
+* \brief Virtual Flow Accelerator Device information  TBD might reuqired to add more Virtual Flow Accelerator details
+*/
 struct g_flow_device_info {
-	char flow_virtual_accel_name[G_FLOW_VIRTUAL_ACCEL_NAME_SIZE]; /**< Device name  of flow accclerator*/
+
+        /**< Virtual flow accclerator name*/
+	char flow_virtual_accel_name[G_FLOW_VIRTUAL_ACCEL_NAME_SIZE]; 
 };
 
-/*! Avaialble flow devices get outArgs */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_avail_devices_get_outargs
+* \brief Virtual Flow Accelerator devices info passing to g_flow_avail_devices_get_info() as Outargs \n\n
+*/
 struct g_flow_avail_devices_get_outargs {
-	uint32_t num_devices; /**< number of devices recieved */
-	struct g_flow_device_info *dev_info; 						
-	/**< Array of pointers, where each points to device specific information */
-	char *last_device_read; 
-	/**< Send a value that the application can use and invoke for the next set of devices */
-	bool b_more_devices;
-	/**< Set if more devices are available */
+
+     /** number of devices actually returned which is <= num_devices of  passed 
+      *  as part of 'g_flow_avail_devices_get_inargs' */
+     uint32_t num_devices; 
+
+     /** Array of pointers, where each points to device specific information */
+     struct g_flow_device_info *dev_info; 
+
+     /** Send a value that the application can use and invoke for the next set of devices */
+     char *last_device_read; 
+
+     /** Set if more devices are available */
+     bool b_more_devices;
 };
 
-/*! Handles */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_handle
+* \brief Virtual Flow Accelerator device handle \n\n
+*
+* <b>Description</b>\n
+*  Handle of  Virtual Flow Accelerator device. Handle is returned to application when it opens
+*  the device. The handle is used for runtime operations before closing device. 
+*/
 struct g_flow_handle {
-	u8 handle[G_FLOW_HANDLE_SIZE]; /**< Virtual Flow Accelerator handle */
+
+     /** Virtual Flow Accelerator handle */
+     u8 handle[G_FLOW_HANDLE_SIZE]; 
 };
 
-/*! Virtual Flow Accelerator Open inArgs */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_open_virtual_flow_accel_inargs
+* \brief Open Virtual Flow Accelerator devices info passing to g_flow_device_open() as Inargs \n\n
+*/
 struct g_flow_open_virtual_flow_accel_inargs {
-	uint16_t pci_vendor_id; /**< PCI Vendor ID 0xXXXX */
-	uint16_t device_id;     /**< Device Id for flow  accelerator*/
-	char *flow_virtual_accel_name; /**< Flow virtual accelerator name */
-        char *accel_application_name; /**< Application name which actually openening virtual flow accelerator */ 
+
+     /** Device Id for Virtual Flow Accelerator*/
+     uint16_t device_id;
+
+     /** Virtual Flow Accelerator name, 
+      *  Format is NAME_IN_STRING#Device_Ref_Index_number */
+     char *flow_virtual_accel_name;
+
+     /** Application name which actually openening Virtual Flow Accelerator */ 
+     char *application_name;
 };
 
-/*! Virtual Flow Accelerator Open OutArgs */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_open_virtual_flow_accel_outargs
+* \brief Open Virtual Flow Accelerator devices paramters to g_flow_device_open() as Outargs \n\n
+*/
 struct g_flow_open_virtual_flow_accel_outargs {
-        struct g_flow_handle *handle; /** virtual flow acclerator handle */
+
+     /** Virtual flow acclerator handle */
+     struct g_flow_handle *handle; 
 };
 
-/*! Port Info*/
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_port_config_inargs
+* \brief Configuration values of port attaching to Virtual Flow Accelerator \n\n
+*/
+struct g_flow_port_config_inargs {
+
+    /** Port number assigned to Virtual Flow Accelerator. This id must be one among ports 
+     *  available as part of vnf. But ID number defined here may not be same as port number
+     *  of vnf. The mapping betweeen port ID assigned to the accelerator and actual port number
+     *  of VNF is application responsibility. */
+     uint32_t id;
+
+     /** Name of port assigned to Virtual Flow Accelerator */
+     char name[G_FLOW_PORT_NAME_SIZE]; 
+};
+
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_port_info
+* \brief Details of port that attached to Virtual Flow Accelerator \n\n
+*/
 struct g_flow_port_info {
-     uint32_t id; /**< ID of the port assigned to flow accelerator */
-     char name[G_FLOW_PORT_NAME_SIZE]; /**< Name of port assigned to flow accelerator */
+
+     /** ID of the port assigned to Virtual Flow Accelerator */
+     uint32_t id; 
+
+     /** Name of port assigned to Virtual Flow Accelerator */
+     char name[G_FLOW_PORT_NAME_SIZE]; 
 };
 
-/*! Get Port details of given flow accelerator inArgs */
-struct g_flow_ports_get_inargs {
-	uint32_t num_ports; /**< Number of ports to get */
-	char *last_port_read; 
-	/**< NULL if this is the first time this call is invoked;
-          Subsequent calls will have a valid value here */											  
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_port_info_cbk_inarg
+* \brief Port detais to callback function g_flow_cbk_port_received_fn as inargs\n\n
+*/
+struct g_flow_port_info_cbk_inarg {
+
+    /** Response status to earlier get port request,  any of G_FLOW_RESPONSE_STATUS_*'  value */
+    enum g_flow_response_status response_status; 
+
+    /** Number of port details returned as part of curent response*/ 
+    uint32_t num_ports; 
+
+    /** Array of pointers, where each points to port specific information 
+     *  defined by 'struct g_flow_port_info' */
+    struct g_flow_port_info *port_info; 						
+
+    /** TRUE indicates, this is not final response and more port entries yet to come*/
+    uint8_t more_entries; 
+
+    /** Application callback argument 1 that passed earlier as part of g_flow_ports_info_get()  */
+    void *cbk_arg1;
+
+    /** Application callback argument 2 that passed earlier as part of g_flow_ports_info_get() */
+    void *cbk_arg2;
 };
 
-/*! Get Port  information Virtual Flow Acceletator get outArgs */
-struct g_flow_ports_get_outargs {
-	uint32_t num_ports; /**< number of ports to get */
-	struct g_flow_port_info *port_info; 						
-	/**< Array of pointers, where each points to port specific information */
-	char *last_port_read; 
-	/**< Send a value that the application can use and
-	  * invoke for the next set of ports */
-	bool b_more_ports;
-	/**< Set if more ports are available */
-};
-
-/*! Callback function prototype that application can provide to receive virtio flow accelrater associated event,
-    OpenStack creates virtio flow accelarator and associates with vnf.
-    As part of this event handler, the application opens virtio flow accelerator device by using g_flow_device_open()  API */
-typedef void (*g_flow_cbk_accelator_associated_fn) (
-        char *flow_virtual_accel_name,
-        char *accel_application_name,
-        void *cbk_arg1, 
-        void *cbk_arg2);
-
-/*! Port status change event info*/
-struct g_flow_port_status {
-      enum g_flow_port_status_event event_type; /**< Type of port status change event */
-      struct g_flow_port_info port_info; /**< Details of port which changed status */
-};
-
-/*! Callabck function prototype that application to receive event when there is change in the run time port status change*/ 
-typedef void (*g_flow_cbk_port_status_change_fn) (
+/** ingroup VIRTIO_FLOW
+* \typedef g_flow_cbk_port_received_fn
+* \brief Callback function to receive details of ports attached to Virtual Flow Acceletator 
+*
+* <b>Description</b>\n
+* The callback will be called after receiving response to the earlier get port request 
+* 'g_flow_ports_info_get()' API. For a given get port API request, the callback will be called
+*  one or more times  based on the number of ports configured and available resources.  
+*
+* \param[in] handle- Virtual Flow Accelerator handle  
+*
+* \param[in] in - Pointer to input structure as defined by 'struct g_flow_port_info_cbk_inarg' 
+*
+* \returns NONE 
+*/
+typedef void (*g_flow_cbk_port_received_fn) (
         struct g_flow_handle *handle,
-        struct g_flow_port_status port_status,
-        void *cbk_arg1,
-        void *cbk_arg2);
+        struct g_flow_port_info_cbk_inarg *in);
 
-/*! Structure to hold notification from virtual flow accelerator callback functions, The api g_flow_notification_hooks_register()
+/** \ingroup VIRTIO_FLOW
+ * \struct g_flow_ports_get_inargs
+ * \brief Inargs that passed to g_flow_ports_info_get() API\n\n
+ */
+struct g_flow_ports_get_inargs {
+
+       /** Pointer to callback function to receive port details */
+       g_flow_cbk_table_info_received_fn *port_rcv_cbk;
+
+       /** Application callback argument 1 */
+       void *cbk_arg1;
+
+       /** Application callback argument 2 */
+       void *cbk_arg2; 
+};
+
+/** \ingroup VIRTIO_FLOW
+ * \struct g_flow_match_field_info
+ * \brief Table match field details \n\n
+ */
+struct g_flow_match_field_info {
+
+    /** Match Field Id, one of G_FLOW_FIELD* value */ 
+    uint32_t id;
+
+    /** TRUE - if field is optional, FALSE - if field is mandatory */ 
+    uint8_t  is_optional; 
+};
+
+/** \ingroup VIRTIO_FLOW
+ * \struct g_flow_packet_notification_inarg
+ * \brief Details of packet received from Virtual Flow Acclerator that passing to g_flow_cbk_packet_received_fn() \n\n
+ */
+struct g_flow_packet_notification_inarg {
+
+     /** Table ID from which packet received */
+     uint8_t  table_id;
+
+     /** Length packet data */
+     uint32_t packet_len; 
+
+     /** Pointer to packet data */
+     uint8_t  *packet_data; 
+
+     /** Application callback argument 1 that configured earlier as part of g_flow_table_add()  */
+     void *cbk_arg1;
+
+     /** Application callback argument 2 that configured earlier as part of g_flow_table_add() */
+     void *cbk_arg2;
+};
+
+/** ingroup VIRTIO_FLOW
+* \typedef g_flow_cbk_packet_received_fn
+* \brief Callback function to receive packet from Virtual Flow Acceletator 
+*
+* <b>Description</b>\n
+* The accelarator sends packet to application by using this callback. In general accelerator sends packet to application
+* incase if it doesn't have any knowledge about handling of the packet it received. That is packet will be sent if 
+* accelerator is not programmed with the flow entry. The packet will also be send to the application in case of 
+* application needs to receieve every packet. 
+*
+* \param[in] handle- Virtual Flow Accelerator handle  
+*
+* \param[in] in - Pointer to input structure as defined by 'struct g_flow_packet_notification_inarg' 
+*
+* \returns NONE 
+*/
+typedef void (*g_flow_cbk_packet_received_fn) (
+        struct g_flow_handle *handle,
+	struct g_flow_packet_notification_inarg *in);
+
+/*! Table removed flow entry information*/
+
+/** \ingroup VIRTIO_FLOW
+ * \struct g_flow_table_removed_flow_entry_inarg
+ * \brief Details of removed flow entry from a table in Virtual Flow Acclerator that passing to g_flow_cbk_flow_removed_fn()\n\n
+ */
+struct g_flow_table_removed_flow_entry_inarg {
+
+        /**< Table ID from which flow entry removed*/
+        uint8_t  table_id; 
+
+        /** Flow removed reason as defined in G_FLOW_REMOVED* */
+        enum g_flow_flow_removed_reason reason; 
+
+        /** Priority of the flow entry */
+        uint32_t priority; 
+
+        /** Length of 'match_fields' buffer details as part of flow entry */
+        uint32_t match_field_len; 
+
+        /** Pointer to match fields buffer contains list of match field values,
+         Each field is defined with 'struct g_flow_match_field'*/
+        uint8_t  *match_fields; 
+
+        /** Application callback argument 1 that configured earlier as part of g_flow_table_add()*/
+        void *cbk_arg1;
+
+        /** Application callback argument 2 that configured earlier as part of g_flow_table_add()*/
+        void *cbk_arg2;
+};
+
+/** ingroup VIRTIO_FLOW
+* \typedef g_flow_cbk_flow_removed_fn
+* \brief Callback function to receive flow entry remove details. 
+*
+* <b>Description</b>\n
+* Application can provide callback function to receive details of flow entry removed from a table 
+* in Virtual Flow Accelerator. As part of g_flow_table_add() configuration, application registers 
+* this callback. For every flow removed in the accelrator, this callback function will be invoked.
+*
+* \param[in] handle- Virtual Flow Accelerator handle  
+*
+* \param[in] in - Pointer to input structure as defined by 'struct g_flow_table_removed_flow_entry_inarg' 
+*
+* \returns NONE 
+*/
+typedef void (*g_flow_cbk_flow_removed_fn) (
+        struct g_flow_handle *handle,
+	struct g_flow_table_removed_flow_entry_inarg *in);
+
+/** \ingroup VIRTIO_FLOW
+ * \struct g_flow_table_notification_hooks
+ * \brief Configuration of callbacks for the  table adding to Virtual Flow Acclerator\n\n
+ */
+struct g_flow_table_notification_hooks
+{
+     /** Packet received callback function, NULL in case no call back function is required */
+     struct g_flow_cbk_packet_received_fn  *pkt_rcvd_fn;
+
+     /** Flow Removed Callback function, NULL in case no call back function is required */
+     struct g_flow_cbk_flow_removed_fn *flow_rmvd_fn;
+	
+     /** Packet received callback function argument 1 that used by applications */
+     void *packet_rcvd_cbk_arg1;
+
+     /** Packet received callback function argument 2 that used by applications */
+     void *packet_rcvd_cbk_arg2;
+
+     /** Flow removed received callback function arguments 1 that used by applications */
+     void *flow_rmvd_cbarg_arg1;
+
+     /** Flow removed received callback function arguments 2 that used by applications */
+     void *flow_rmvd_cbarg_arg2;
+};
+
+/** \ingroup VIRTIO_FLOW
+ * \struct g_flow_table_config_inargs
+ * \brief Configuration values of table adding to Virtual Flow Acclerator\n\n
+ */
+struct g_flow_table_config_inargs {
+
+    /** Table Id value, it can be any value between 0 and 254, it must be unique 
+     *  for the given Virtual flow acclerator */ 
+    uint8_t id; 
+
+    /** Name of the table */
+    char name[G_FLOW_MAX_TABLE_NAME_LEN]; 
+
+    /** Maximum number of flow records that supported by the table */
+    uint32_t max_records; 
+
+    /** Total number of match fields supported by the table */
+    uint32_t match_fields_cnt; 
+
+    /** Array of pointers, where each points to match fields infomation 
+        as defined by 'struct g_flow_match_field_info'*/
+    struct g_flow_match_field_info *match_field_info;
+
+    /** Pointer to input structure containing notitication callback function and arguments*/
+    struct g_flow_table_notification_hooks *cbk_hook_fns; 
+};
+
+/** \ingroup VIRTIO_FLOW
+ * \struct g_flow_table_info
+ * \brief Details of table that added to Virtual Flow Acclerator\n\n
+ */
+struct g_flow_table_info {
+
+     /** Name of table, basically used for debugging purpose*/
+     char name[FLOW_IFNAMESIZ]; 
+
+     /** ID of the table, it can be any value between 0 and 254 */
+     uint8_t id; 
+
+     /** Maximum number of flow records that supported by the table */
+     uint32_t max_records; 
+
+     /** Total number of match fields supported by the table */
+     uint32_t match_fields_cnt; 
+
+     /** Array of pointers, where each points to match field specific information */
+     struct g_flow_match_field_info *match_field_info;
+};
+
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_table_info_cbk_inarg
+* \brief Table details to callback function 'g_flow_cbk_table_info_received_fn' as inarg\n\n
+*/
+struct g_flow_table_info_cbk_inarg {
+
+     /** Response status of earlier get table request, any of G_FLOW_RESPONSE_STATUS_*' value */
+     enum g_flow_response_status response_status; 
+
+     /** Number of table details that  actually received as part of curent response*/ 
+     uint32_t num_tables; 
+
+     /** Array of pointers, where each points to table specific information */
+     struct g_flow_table_info *table_info; 						
+
+     /** TRUE indicates, this is not final response and more table entries yet to come*/
+     uint8_t more_entries; 
+
+     /** Application callback argument 1 that passed earlier as part of g_flow_tables_info_get()  */
+     void *cbk_arg1;
+
+     /** Application callback argument 2 that passed earlier as part of g_flow_tables_info_get() */
+     void *cbk_arg2;
+};
+
+/** ingroup VIRTIO_FLOW
+* \typedef g_flow_cbk_table_info_received_fn
+* \brief Callback function to receive details of tables assigned to Virtual Flow Acceletator 
+*
+* <b>Description</b>\n
+* The callback will be called after receiving response to the earlier get table request 
+* 'g_flow_tables_info_get()' API. For a given get table API request, the callback will be 
+* called one or more times  based on the number of tables configured and available resources.  
+*
+* \param[in] handle- Virtual Flow Accelerator handle  
+*
+* \param[in] in - Pointer to input structure as defined by 'struct g_flow_table_info_cbk_inarg' 
+*
+* \returns NONE 
+*/
+typedef void (*g_flow_cbk_table_info_received_fn) (
+        struct g_flow_handle *handle,
+        struct g_flow_table_info_cbk_inarg *in);
+
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_tables_get_inargs
+* \brief Arguments passing to g_flow_tables_info_get() API, as inargs, to get table details\n\n
+*/
+struct g_flow_tables_get_inargs {
+
+     /** Pointer to callback function to receive table details */
+     g_flow_cbk_table_info_received_fn *table_rcv_cbk; 
+
+     /** Application callback argument 1 */
+     void *cbk_arg1; 
+
+     /** Application callback argument 2 */
+     void *cbk_arg2;
+};
+
+#if 0
+/*! Structure to hold notification from Virtual Flow Accelerator callback functions, 
+    The api g_flow_notification_hooks_register()
     is used to register callback functions  */
 struct g_flow_notification_hooks {
-	struct g_flow_cbk_accelator_associated_fn  *accelator_associated_fn;
-	/**< Accelator associated  vNF callback function. For every VNF, OpenStack creates  vertio flow accelerator and 
-         * exposed to VNF. */
 
         struct g_flow_cbk_port_status_change_fn *port_status_change_fn;
-        /**< Whenever change in the status of the ports attached virtio flow accelrator, this callback function will be called*/
+        /**< Whenever change in the status of the ports attached virtio flow accelrator, 
+           this callback function will be called*/
 
 	/**< Accelerator assocated callback function arguments */
 	void *acclerator_assocated_rcvd_cbk_arg1;
@@ -304,518 +664,630 @@ struct g_flow_notification_hooks {
 	void *port_status_change_cbk_arg1;
 	void *port_status_change_cbk_arg2;
 };
+#endif
 
-/*! Packet notification details from table of given virtual flow accelator TBD might required to add more fields*/
-struct g_flow_packet_notification {
-        uint8_t  table_id; /**< Table ID from which packet is received */
-        uint32_t packet_len; /**< Length packet data */
-        uint8_t  *packet_data; /**< Pointer to packet data */
-};
-
-/*! Callback function prototype that application can provide to receive packet from virtual flow acclerator */
-typedef void (*g_flow_cbk_packet_received_fn) (
-        struct g_flow_handle *handle,
-	struct g_flow_packet_notification *in,
-        void *cbk_arg1,
-        void *cbk_arg2);
-
-/*! Table removed flow entry information*/
-struct g_flow_table_removed_flow_entry {
-        uint8_t  table_id; /**< Table ID of flow entry removed*/
-        uint32_t priority; /**< priority of flow entry */
-        uint32_t match_field_len; /**< Length of 'match_fields' buffer */
-        uint8_t  *match_fields; /**< Pointer to match fields buffer contains list of match field values,
-                                    Each field is defined with 'struct g_flow_match_field'*/
-};
-
-/*! Callback function prototype that application can provide to receive flow removed event from virtual flow acclerator */
-typedef void (*g_flow_cbk_flow_removed_fn) (
-        struct g_flow_handle *handle,
-	struct g_flow_table_removed_flow_entry *in, /**> Flow entry that removed from table*/
-        void *cbk_arg1,
-        void *cbk_arg2);
-
-/*! Structure to hold notification from tables of given virtual flow acclerator callback functions */
-struct g_flow_table_notification_hooks
-{
-	/**< Packet received callback function, NULL in case no call back function is required */
-	struct g_flow_cbk_packet_received_fn  *pkt_rcvd_fn;
-	/**< Flow Removed Callback function, NULL in case no call back function is required */
-	struct g_flow_cbk_flow_removed_fn *flow_rmvd_fn;
-	
-	/**< Packet received callback function arguments */
-	void *packet_rcvd_cbk_arg1;
-	void *packet_rcvd_cbk_arg2;
-
-	/**< Flow removed received callback function arguments */
-	void *flow_rmvd_cbarg_arg1;
-	void *flow_rmvd_cbarg_arg2;
-};
-
-/*! Table Match field information */
-struct g_flow_match_field_info {
-  uint32_t id; /**< Match Field Id  TBD defining list of match fields supported*/
-  uint8_t  is_optional; /**< TRUE - if field is optional, FALSE - if field is mandatory */ 
-};
-
-/*! Table configuration values for the virtual flow acclerator */ 
-struct g_flow_table_config_inargs {
-  uint8_t id; /**< Table Id value, it can be any value between 0 and 254, it must be unique for the given virtual flow acclerator */ 
-  char name[G_FLOW_MAX_TABLE_NAME_LEN]; /**< Name of the table */
-  uint32_t max_records; /**< Maximum number of flow records that supported by the table */
-  uint32_t match_fields_cnt; /**< Total number of match fields supported by the table */
-  struct g_flow_match_field_info *match_field_info;
-  struct g_flow_table_notification_hooks *cbk_hook_fns; /**< Pointer to input structure containing notitication callback function and arguments*/
-};
-
-/*! Flow Table information */ 
-struct g_flow_table_info {
-	char name[FLOW_IFNAMESIZ]; /**< Device name */
-        uint8_t id; /**< Id of the table */
-        uint32_t max_records; /**< Maximum number of flow records that supported by the table */
-        uint32_t match_fields_cnt; /**< Total number of match fields supported by the table */
-        struct g_flow_match_field_info *match_field_info;
-	/**< Array of pointers, where each points to match field specific information */
-};
-
-/*! Get flow table details of given virtual flow acclerator inArgs */
-struct g_flow_tables_get_inargs {
-	uint32_t num_tables; /**< Number of tables to get */
-	char *last_table_read; 
-	/**< NULL if this is the first time this call is invoked;
-          Subsequent calls will have a valid value here */											  
-};
-
-/*! Flow tables information get outArgs */
-struct g_flow_tables_get_outargs {
-	uint32_t num_tables; /**< number of tables returned */
-	struct g_flow_table_info *table_info; 						
-	/**< Array of pointers, where each points to
-	    table specific information */
-	char *last_table_read; 
-	/**< Send a value that the application can use and
-	  * invoke for the next set of tables */
-	bool b_more_tables;
-	/**< Set if more tables are available */
-};
-
-/*! Format of each match field values as part of match_fileds buffer created in the table flow entry */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_match_field
+* \brief  Format of each match field value defined as part of match_fileds buffer in the table flow entry 
+*/
 struct g_flow_match_field {
-        uint16_t id:7; /**< Match field ID */
-        uint16_t mask:1; /**< TRUE means mask value is present after the match field value */
-        uint16_t length:8; /**< Length of match field value, it will be doubled in case of mask value present  */
-        uint8_t value[0]; /**< Match field value. Along with match field value 'mask value'  will also present if 'mask' value is TRUE*/ 
+
+     /** Match field ID, one of G_FLOW_FIELD_* value */
+     uint16_t id:7; 
+
+     /** TRUE means mask value is present after the match field value */
+     uint16_t mask:1;
+
+     /** Length of match field value, it will be doubled in case of mask value present  */
+     uint16_t length:8;
+
+     /** Value of match field. Along with match field value 'mask value'  will also 
+      *  present after match field if 'mask' value is TRUE*/ 
+     uint8_t value[0];
 };
 
-/* ! Format of each action value as part of actions  bufffer of the table flow entry */
-struct g_flow_action {
-       uint32_t id; /**< Action ID */
-       uint32_t length; /**< Length of action value */ 
-       uint8_t  value[0]; /**< Action value, each action will have diffeent size */ 
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_action
+* \brief Format of each action value defined as part of actions bufffer in the table flow entry 
+*/
+struct g_flow_action 
+
+     /** Action ID, one of G_FLOW_AT_* value */
+     uint32_t id; 
+
+     /** Length of action value */ 
+     uint32_t length;
+
+     /** Action value, each action will be of diffeent size */ 
+     uint8_t  value[0]; 
 };
 
-/*! Select a flow entry in a table*/
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_table_flow_entry_selector
+* \brief Defines index values for the selection of flow entries in the table 
+*/
 struct g_flow_table_flow_entry_selector {
-        uint32_t priority; /**< Priority value of flow entry, higher number indicates higher priority 
-                                Minimum valid priority value  in flow entry addition is 1, Priority value 0 indicates the priority value
-                                is not used as parameter in the selection for flow entires. */
-        uint32_t match_field_len; /**< Length of 'match_fields' buffer, zero value no match fields in the selection of flow entries*/
-        uint8_t  *match_fields; /**< Pointer to list of variable size match field values, 
-                                    each will be created and accessed by using 'struct g_flow_match_field'*/
+
+     /** Priority value of flow entry, higher number indicates higher priority 
+      *  Minimum valid priority value  in flow entry addition is 1. 
+      *  Priority value 0 indicates the priority value is not used as index in 
+      *  selection of flow entries. */
+     uint32_t priority; 
+
+     /** Length of 'match_fields' buffer, zero means match fields are not used 
+      *  as index in the selection of flow entries */
+     uint32_t match_field_len; 
+
+     /** If 'match_field_len' is more than zero, this is pointer to list of continuous 
+      *  variable size match field values, each field value  will be accessed  by using 
+      *  'struct g_flow_match_field' format */
+     uint8_t  *match_fields;
 };
 
-/*! Table flow entry information used as input argument value in the addition and modification of flow entry API
-    In case of modification replaces 'inactivity_timeout' and 'action' values of selected
-    selected flow entires */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_table_add_n_mod_flow_entry_inargs
+* \brief Defines inargs parameters for the table flow entry addition and modification APIs
+*
+* <b>Description</b>\n
+*  This data-structures defines input parameter values in the addition and modification of 
+*  flow entry APIs g_flow_table_flow_entry_add() and g_flow_table_flow_entry_modify().
+*  In case of addition operation, creates new entry in the table with inarg values passed.
+*  In case of modification replaces 'inactivity_timeout' and 'action' values of selected
+*  selected flow entires by using 'flow_selector'. 
+*/
 struct g_flow_table_add_n_mod_flow_entry_inargs {
-        uint8_t  table_id; /**< Table ID to which adding or modifying flow */
-        struct g_flow_table_flow_entry_selector flow_selector; /**< Table flow entry selector values */ 
-        uint64_t user_opq_val;  /** <Opaque value, for flow api,  as part of flow entry, to store application specific information*/
-        uint64_t user_opq_mask;  /** <Mask used to restrict the 'user_opq_val' bits,*/
-        uint32_t inactivity_timeout; /**< Flow inactivity timeout value in secs. Zero means no timeout*/
-        uint32_t actions_len;/**< Length of actions supported  by the flow entry*/
-        uint8_t  *actions; /**< Pointer to list of variable size action values of flow entry,
-                                each action value will be created and accessed by using 'struct g_flow_action' */
+
+     /** ID of Table ID for which adding or modifying flow */
+     uint8_t  table_id; 
+ 
+     /** Table flow entry selector values. In case of addition device creates flow  with the 
+      *  'flow_selector values. In case of modification the 'flow_selector is  used to select 
+      *  earlier created flow entry */
+     struct g_flow_table_flow_entry_selector *flow_selector; 
+ 
+     /** As part of flow entry, it is used to store application specific information which is 
+      *  opque to flow api*/
+     uint64_t user_opq_val; 
+ 
+     /** Mask used to restrict the 'user_opq_val' bits,*/
+     uint64_t user_opq_mask;  
+
+     /** Flow inactivity timeout value in secs. Zero means no timeout and entry is permenant */
+     uint32_t inactivity_timeout; 
+ 
+     /** Length of actions supported by the flow entry*/
+     uint32_t actions_len;
+
+     /** Pointer to list of variable size action values of flow entry,each action value will be 
+         created and accessed by using 'struct g_flow_action' */
+     uint8_t  *actions; 
 };
 
-/* ! Flow entry deletion function in_args */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_table_del_flow_entires_inarg
+* \brief Defines inargs parameters for the table flow entry deletion API g_flow_table_flow_entry_delete()
+*/
 struct g_flow_table_del_flow_entires_inarg {
-        uint8_t  table_id;  /** <Table Id from which deleting flow entries*/
-        struct g_flow_table_flow_entry_selector *flow_selector; /** < Selector values, selected flow entries are deleted */  
+
+     /** Table Id from which deleting flow entries*/
+     uint8_t  table_id;  
+
+     /** Flow entry selector value used to select flow entries that created earlier in the Virtual Flow 
+         Accelerator . All the selected flow entries are deleted */
+     struct g_flow_table_flow_entry_selector *flow_selector;
 };
 
-/* ! Details for table flow entry */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_table_flow_entry
+* \brief Details flow entry creted in the table 
+*/
 struct g_flow_table_flow_entry{
-        uint32_t priority; /**< priority value of flow entry */
-        uint32_t match_field_len; /**< Length of 'match_fields' buffer*/
-        uint8_t  *match_fields; /**< Pointer to list of variable size match field values, 
-                                    each will be accessed by using 'struct g_flow_match_field'*/
 
-        uint64_t user_opq_val;  /** <Opaque value, for flow api,  as part of flow entry, to store application specific information*/
-        uint64_t user_opq_mask;  /** <Mask used to restrict the 'user_opq_val' bits,*/
+      /** Priority value of flow entry */
+      uint32_t priority; 
 
-        uint32_t inactivity_timeout; /**< Flow inactivity timeout value in secs. Zero means no timeout*/
+      /** Length of 'match_fields' buffer*/
+      uint32_t match_field_len; 
 
-        uint64_t num_of_pkts_proc /**< Number of Packetes processed by the flow */
-        uint64_t num_of_bytes_proc; /** < Number of bytes processed the the flow */
-        uint64_t first_pkt_time; /** <System up time in seconds at which first packet hit the flow */        
-        uint64_t last_pkt_time; /** <System up time in seconds at which last packet hit the flow */        
+      /** Pointer to list of variable size match field values, each will be accessed by using 
+          'struct g_flow_match_field'*/
+      uint8_t  *match_fields;
 
-        uint32_t actions_len;/**< Length of actions values supported  by the flow entry*/
-        uint8_t  *actions; /**< Pointer to list of, variable size, action values of flow entry,
-                                each action value will be accessed by using 'struct g_flow_action' */
+      /** Application Opaque value used to store application specific information*/
+      uint64_t user_opq_val;  
+
+      /** Mask used to restrict the 'user_opq_val' bits,*/
+      uint64_t user_opq_mask; 
+
+      /** Flow inactivity timeout value in secs. Zero means no timeout*/
+      uint32_t inactivity_timeout; 
+
+      /** Number of Packetes processed by the flow entry */
+      uint64_t num_of_pkts_proc 
+
+      /**  Number of bytes processed the the flow entry*/
+      uint64_t num_of_bytes_proc;
+
+      /** System up time in seconds at which first packet hit the flow entry */        
+      uint64_t first_pkt_time;
+
+      /** System up time in seconds at which last packet hit the flow entry */        
+      uint64_t last_pkt_time;
+
+      /** Length of actions values supported  by the flow entry*/
+      uint32_t actions_len;
+
+      /** Pointer to list of, variable size, action values of flow entry,
+           each action value will be accessed by using 'struct g_flow_action' */
+      uint8_t  *actions; 
 };
 
-/* ! Flow entry receive callback function in_args , parameters passed to flow entries received callback function */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_table_flow_entires_cbk_inarg
+* \brief Details of flow entry passing to g_flow_cbk_flow_entries_received_fn() cbk as inargs 
+*/
 struct g_flow_table_flow_entires_cbk_inarg {
-        uint8_t table_id; /** < Table id to which the flow entries belongs*/
-        enum g_flow_response_status response_status; /** <Response status of earlier flow request */
-        uint32_t number_of_flow_entries; /** < Number of flow entries returned in this iteration */
-        struct g_flow_table_flow_entry *flow_entries; /**< Array contains list of flow entry details */
-        uint8_t more_entries; /** < TRUE indicates, this is not final response and more flow entries yet to come*/
-        void *cbk_arg1; /** <Application callback argument 1 */
-        void *cbk_arg2; /** <Application callback argument 2 */
+
+     /**  Table id to which the flow entries belongs */
+     uint8_t table_id; 
+
+     /** Response status of earlier get flow request,  any of G_FLOW_RESPONSE_STATUS_*'  value */
+     enum g_flow_response_status response_status; 
+
+     /**  Number of flow entries returned in the current iteration */
+     uint32_t number_of_flow_entries; 
+
+     /** Array contains list of flow entry, each entry points to flow entry information */
+     struct g_flow_table_flow_entry *flow_entries; 
+
+     /**  TRUE indicates, this is not final response and more flow entries yet to come*/
+     uint8_t more_entries; 
+
+     /** Application callback argument 1 that passed earlier as part of g_flow_table_flow_entry_get()  */
+     void *cbk_arg1;
+
+     /** Application callback argument 2 that passed earlier as part of g_flow_table_flow_entry_get() */
+     void *cbk_arg2;
 };
 
-/*! Callback function prototype that application can provide to receive selected flow entries of a table in the accelerator */
+/** ingroup VIRTIO_FLOW
+* \typedef g_flow_cbk_flow_entries_received_fn
+* \brief Callback function to receive details of flow entry of tables assigned to Virtual Flow Acceletator 
+*
+* <b>Description</b>\n
+* Callback function that application can provide to receive selected flow entries of a table in the 
+* accelerator. The callback will be called after receiving response to the earlier get flow request 
+* 'g_flow_table_flow_entry_get()' API. For a given get flow entry API request, the callback will be 
+* called one or more times  based on the number of flows selected and available resources.  
+*
+* \param[in] handle- Virtual Flow Accelerator handle  
+*
+* \param[in] in - Pointer to input structure as defined by 'struct g_flow_table_flow_entires_cbk_inarg' 
+*
+* \returns NONE 
+*/
 typedef void (*g_flow_cbk_flow_entries_received_fn) (
         struct g_flow_handle *handle,
         struct g_flow_table_flow_entires_cbk_inarg *in);
 
-/* ! Get Flow entries function in_args */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_table_get_flow_entires_inarg
+* \brief Parameters passing to g_flow_table_flow_entry_get() as inargs 
+*/
 struct g_flow_table_get_flow_entires_inarg {
-        uint8_t  table_id;  /** <Table Id from which getting flow entries*/
-        struct g_flow_table_flow_entry_selector *flow_selector; /** < Selector values, all selected flow entries passed to 
-                                                                      callback function asynchronusly */  
-        g_flow_cbk_flow_entries_received_fn *flow_rcv_cbk; /** < Pointer to callback function to receive flow entries */
-        void *cbk_arg1; /** <Application callback argument 1 */
-        void *cbk_arg2; /** <Application callback argument 2 */
+
+     /** Table Id from which flow entries returned*/
+     uint8_t  table_id;  
+
+     /**  Selector values, all selected flow entries passed to callback function asynchronusly */  
+     struct g_flow_table_flow_entry_selector *flow_selector; 
+
+     /**  Pointer to callback function to receive flow entries */
+     g_flow_cbk_flow_entries_received_fn *flow_rcv_cbk; 
+
+     /** Application callback argument 1 */
+     void *cbk_arg1; 
+
+     /** Application callback argument 2 */
+     void *cbk_arg2; 
 };
 
-/*! Group object, data-structure used for Object type 'G_FLOW_GROUP_OBJECT' */
-struct g_flow_group_object {
-       uint32_t id; /**< Id of the group object, it MUST be unique value */
-
-/*TBD of adding more fields */
-};
-
-/*! Meter object, data-structure used for Object type 'G_FLOW_METER_OBJECT' */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_meter_object
+* \brief Meter object, data-structure used for Object type 'G_FLOW_OBJECT_METER' 
+*/
 struct g_flow_meter_object {
-       uint32_t id; /**< Id of the meter object, it MUST be unique value */
 
-/*TBD of adding more fields */
+     /** Id of the meter object, it MUST be unique value */
+     uint32_t id; 
+
+     /*TBD of adding more fields */
 };
 
-/*! Inargs for the addition/modification of objects in a virutal flow accelerator*/
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_object_entry_inarg
+* \brief Parameters that passed to g_flow_object_entry_add() as inargs 
+*/
 struct g_flow_object_entry_inarg {
-       uint32_t type; /**< One of object Type defined in 'enum g_flow_objects'  */
-       uint32_t length; /**< Length of object value  */
-       uint8_t  value[0]; /**<  Actual object value, seperate data-structure for each object type */ 
+
+     /** One of object Type, one of G_FLOW_OBJECT_*  */
+     enum g_flow_objects type; 
+
+     /** Length of object value  */
+     uint32_t length;
+
+     /**  Actual object value, seperate data-structure for each object type */ 
+     uint8_t  value[0]; 
 };
 
 /*! Flow object callback functions in args */
+
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_object_entry_cbk_inarg
+* \brief Parameters passing to g_flow_object_entry_add() as inargs 
+*/
 struct g_flow_object_entry_cbk_inarg { 
-       enum g_flow_response_status response_status; /** <Response status of earlier object request */
-       uint32_t type; /** Type of object */
-       void *object; /**< Pointer to object entry contains earlier requested object  details  */ 
-       void *cbk_arg1; /** <Application callback argument 1 */
-       void *cbk_arg2; /** <Application callback argument 2 */
+
+     /** Response status of earlier object request, any of G_FLOW_RESPONSE_STATUS_*'  value */
+     enum g_flow_response_status response_status; 
+
+     /** Type of object, one of G_FLOW_OBJECT_* */
+     enum g_flow_objects type;
+
+     /** Pointer to object entry contains earlier requested object  details  */ 
+     void *object;
+
+     /** Application callback argument 1 */
+     void *cbk_arg1;
+
+     /** Application callback argument 2 */
+     void *cbk_arg2;
 };
 
-/*Callback function proototype to received object details */
+/** ingroup VIRTIO_FLOW
+* \typedef g_flow_cbk_object_entries_received_fn
+* \brief Callback function to receive object details from Virtual Flow Acceletator 
+*
+* <b>Description</b>\n
+* Callback function that application can provide to receive object of geven type from 
+* accelerator. The callback will be called after receiving response to the earlier get object request 
+* 'g_flow_object_entry_get()' API. 
+*
+* \param[in] handle- Virtual Flow Accelerator handle  
+*
+* \param[in] in - Pointer to input structure as defined by 'struct g_flow_object_entry_cbk_inarg' 
+*
+* \returns NONE 
+*/
 typedef void (*g_flow_cbk_object_entries_received_fn) (
         struct g_flow_handle *handle,
         struct g_flow_object_entry_cbk_inarg *in);
 
-/*! Get object inargs */
+/** ingroup VIRTIO_FLOW
+* \struct g_flow_object_entry_inarg
+* \brief Parameters that passed to g_flow_object_entry_get() as inargs 
+*/
 struct g_flow_get_object_inargs {
-       uint32_t id; /**< Id of the object to get details */
-       uint32_t type; /**< object type  */
-       g_flow_cbk_object_entries_received_fn *object_rcv_cbk; /**< Pointer to callback function to received object details */
-       void *cbk_arg1; /** <Application callback argument 1 */
-       void *cbk_arg2; /** <Application callback argument 2 */
+
+     /** Id of the object to get details */
+     uint32_t id; 
+
+     /** Object type, one of G_FLOW_OBJECT_*  */
+     uint32_t type;
+
+     /** Pointer to callback function to receive object details */
+     g_flow_cbk_object_entries_received_fn *object_rcv_cbk; 
+
+     /** Application callback argument 1 */
+     void *cbk_arg1;
+
+     /** Application callback argument 2 */
+     void *cbk_arg2;
 };
 
 /*! Function prototypes */
-/*! 
-w_table_flow_entry
- * @brief This API returns the API version.
+
+/** \ingroup VIRTIO_FLOW 
+ * \brief This API returns the API version.
  *
- * @param[in/out] version - Version string
+ * \param[in/out] version - Version string
  * 
- * @returns SUCCESS upon SUCCESS or FAILURE 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_api_version(char *version);
 
 /*! 
- * @brief Get the number of available devices 
+ * \brief Get the number of available devices 
  *
- * @param[in/out] nr_devices - Number of devices 
+ * \param[in/out] nr_devices - Number of devices 
  *
- * @returns SUCCESS upon SUCCESS or FAILURE
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_avail_devices_get_num(uint32_t *nr_devices); 
 
 /*!
- * @brief  Get the avaialble device info  
+ * \brief  Get the avaialble device info  
  *
- * @param[in] in -  Pointer to input structure
+ * \param[in] in -  Pointer to input structure
  *
- * @param[out] out - Pointer to output structure containing device information
+ * \param[out] out - Pointer to output structure containing device information
  *
- * @returns SUCCESS upon SUCCESS or failure 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_avail_devices_get_info(
 	struct g_flow_avail_devices_get_inargs *in,
 	struct g_flow_avail_devices_get_outargs *out);
 
+#if 0
 /*!
- * @brief Register for notifications from virtual flow accelerator
+ * \brief Register for notifications from Virtual Flow Accelerator
  *
- * @param[in] flow_virtual_accel_name- virtual flow accelerator name to which registering callback functions 
- * @param[in] application_name - Application which registering with virtual flow accelerator 
+ * \param[in] flow_virtual_accel_name- Virtual Flow Accelerator name to which registering callback functions 
+ * \param[in] application_name - Application which registering with Virtual Flow Accelerator 
  *
- * @param[in]  in - Pointer to input structure containing notitication callback function and arguments.
+ * \param[in]  in - Pointer to input structure containing notitication callback function and arguments.
  *                  NULL is passed for the functions that are registering.
  *
- * @returns SUCCESS upon SUCCESS or FAILURE
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
- * @ingroup VIRTIO_IPSEC
+ * \ingroup VIRTIO_IPSEC
  */
 int32_t g_flow_notification_hooks_register (
         char *flow_virtual_accel_name,
         char *applicaton_name,
 	const struct g_flow_notification_hooks *in);
+#endif
 
 /*! 
- * @brief Open an virtual flow acclerator device.
+ * \brief Open an Virtual flow acclerator device.
+ *        Create instance of the device or processing context in Virtual flow acclerator.
  *
- * @param[in] in - Pointer to input structure
+ * \param[in] in - Pointer to input structure
  *
- * @param[out] out -Pointer to output structure with accelerator handle 
+ * \param[out] out -Pointer to output structure with accelerator instance handle. 
+ *                  Applications uses the handler for its subsequent operations before close.
  *
- * @returns SUCCESS upon SUCCESS or FAILURE
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_device_open(
 	struct g_flow_open_virtual_flow_accel_inargs *in,
 	struct g_flow_open_virtual_flow_accel_outargs *out);
 
 /*! 
- * @brief Get the number of ports that assiged the given virtual flow accelerator 
+ * \brief Add port to previously opened Virtual Flow Accelerator 
  *
- * @param[in/out] nr_ports - Number of ports 
+ * \param[in] handle- Virtual Flow Accelerator handle 
+ * 
+ * \param[in] port_cnfg - Pointer to port  configuration values.
  *
- * @returns SUCCESS upon SUCCESS or FAILURE
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
-int32_t g_flow_ports_get_num(uint32_t *nr_tables); 
+int32_t g_flow_port_add(struct g_flow_handle *handle,
+                        struct g_flow_port_config_inargs *port_cnfg);
+
+/*! 
+ * \brief Get the number of ports that assiged the given Virtual Flow Accelerator 
+ *
+ * \param[out] nr_ports - Number of ports 
+ *
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
+ *
+ * \ingroup VIRTIO_FLOW
+ */
+int32_t g_flow_ports_get_num(uint32_t *nr_ports); 
 
 /*!
- * @brief  Get the ports info of given virtual flow accelerator  
+ * \brief  Get the ports info of given Virtual Flow Accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] in -  Pointer to input structure
+ * \param[in] in -  Pointer to input structure
  *
- * @param[out] out - Pointer to output structure containing port information
+ * \param[out] out - Pointer to output structure containing port information
  *
- * @returns SUCCESS upon SUCCESS or failure 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
-int32_t g_flow_ports_get_info(struct g_flow_handle *handle,
-                              struct g_flow_ports_get_inargs *in,
-	                      struct g_flow_ports_get_outargs *out);
+int32_t g_flow_ports_info_get(struct g_flow_handle *handle,
+                              struct g_flow_ports_get_inargs *in);
+
+
 /*! 
- * @brief Add table to previously opened virtual flow accelerator 
+ * \brief Add table to previously opened Virtual Flow Accelerator 
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  * 
- * @param[in] table_cnfg - Pointer to table  configuration values.
+ * \param[in] table_cnfg - Pointer to table  configuration values.
  *
- * @returns SUCCESS upon SUCCESS or FAILURE
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_table_add(struct g_flow_handle *handle,
                          struct g_flow_table_config_inargs *table_cnfg);
-/*! 
- * @brief After completing configuration the accelerator, usually after adding all tables, applications calls this API.
- *
- * @param[in] handle- virtual flow accelerator handle 
- *
- * @returns SUCCESS upon SUCCESS or FAILURE
- *
- * @ingroup VIRTIO_FLOW
- */
-int32_t g_flow_application_ready(struct g_flow_handle *handle); 
 
 /*! 
- * @brief Get the number of tables configured for the given virtual flow accelerator 
+ * \brief Get the number of tables configured for the given Virtual Flow Accelerator 
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in/out] nr_tables - Number of tables 
+ * \param[in/out] nr_tables - Number of tables 
  *
- * @returns SUCCESS upon SUCCESS or FAILURE
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_tables_get_num(struct g_flow_handle *handle,
                               uint32_t *nr_tables); 
 
 /*!
- * @brief  Get the tables info of given virtual flow accelerator  
+ * \brief  Get the tables info of given Virtual Flow Accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] in -  Pointer to input structure
+ * \param[in] in -  Pointer to input structure
  *
- * @param[out] out - Pointer to output structure containing table information
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @returns SUCCESS upon SUCCESS or failure 
- *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_tables_info_get(struct g_flow_handle *handle,
-                               struct g_flow_tables_get_inargs *in,
-	                       struct g_flow_tables_get_outargs *out);
+                               struct g_flow_tables_get_inargs *in);
+
+/*! 
+ * \brief After completing configuration of the accelerator, usually after adding 
+ *        all tables, all ports applications calls this API. This is way for 
+ *        application to inform Virtual Flow Accelerator that it completed all 
+ *        its configuration and it is ready to use. 
+ *
+ *
+ * \param[in] handle- Virtual Flow Accelerator handle 
+ *
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
+ *
+ * \ingroup VIRTIO_FLOW
+ */
+int32_t g_flow_application_ready(struct g_flow_handle *handle); 
+
+
 /*!
- * @brief  Add flow entry into given table of a virtual flow accelerator  
+ * \brief  Add flow entry into given table of a Virtual Flow Accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] in -  Pointer to input structure contains flow entry details
+ * \param[in] in -  Pointer to input structure contains flow entry details
  *
- * @returns SUCCESS upon SUCCESS or failure 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_table_flow_entry_add(struct g_flow_handle *handle,
                                     struct g_flow_table_add_n_mod_flow_entry_inargs *in);
 /*!
- * @brief  Modify flow entry of a table in a virtual flow accelerator  
+ * \brief  Modify flow entry of a table in a Virtual Flow Accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] in -  Pointer to input structure contains flow entry details
+ * \param[in] in -  Pointer to input structure contains flow entry details
  *
- * @returns SUCCESS upon SUCCESS or failure 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_table_flow_entry_modify(struct g_flow_handle *handle,
                                        struct g_flow_table_add_n_mod_flow_entry_inargs *in);
 
 /*!
- * @brief  Delete a selected flow entres of a table in a virtual flow accelerator  
+ * \brief  Delete a selected flow entres of a table in a Virtual Flow Accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] in -  Pointer to input structure contains flow entry selector details 
+ * \param[in] in -  Pointer to input structure contains flow entry selector details 
  *
- * @returns SUCCESS upon SUCCESS or failure 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_table_flow_entry_delete(struct g_flow_handle *handle,
                                        struct g_flow_table_del_flow_entires_inarg *in);
 
 /*! 
- * @brief Get flow entry details of for the required selctor value s of a virtual flow accelerator 
+ * \brief Get flow entry details of for the required selctor value s of a Virtual Flow Accelerator 
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] in -  Pointer to input structure contains flow entry selectors, callbacks, etc.  
+ * \param[in] in -  Pointer to input structure contains flow entry selectors, callbacks, etc.  
  *
- * @returns SUCCESS upon SUCCESS or FAILURE
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_table_flow_entry_get(struct g_flow_handle *handle,
                                     struct g_flow_table_get_flow_entires_inarg *in);
 /*!
- * @brief  Add object entry in a virtual flow accelerator  
+ * \brief  Add object entry in a Virtual Flow Accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] in -  Pointer to input structure contains object entry details. 
+ * \param[in] in -  Pointer to input structure contains object entry details. 
  *
- * @returns SUCCESS upon SUCCESS or failure 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_object_entry_add(struct g_flow_handle *handle,
                                 struct g_flow_object_entry_inarg *in);
 
 /*!
- * @brief  Modify object entry in a virtual flow accelerator  
+ * \brief  Modify object entry in a Virtual Flow Accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] in -  Pointer to input structure contains object entry details. 
+ * \param[in] in -  Pointer to input structure contains object entry details. 
  *
- * @returns SUCCESS upon SUCCESS or failure 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_object_entry_modify(struct g_flow_handle *handle,
                                    struct g_flow_object_entry_inarg *in);
 
 /*!
- * @brief  Delete object entry from virtual flow accelerator  
+ * \brief  Delete object entry from Virtual Flow Accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] type - Type of object table from which deleting object
+ * \param[in] type - Type of object table from which deleting object
  *
- * @param[in] id - Id of the object to delete
+ * \param[in] id - Id of the object to delete
  *
- * @returns SUCCESS upon SUCCESS or failure 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_object_entry_delete(struct g_flow_handle *handle,
                                    enum g_flow_objects type, 
                                    uint32_t id);
 /*!
- * @brief  Get the object info of given virtual flow accelerator  
+ * \brief  Get the object info of given Virtual Flow Accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] in -  Pointer to input structure contains to get object details
+ * \param[in] in -  Pointer to input structure contains to get object details
  *
- * @returns SUCCESS upon SUCCESS or failure 
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE 
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_object_entry_get(struct g_flow_handle *handle,
                                 struct g_flow_get_object_inargs *in);
 /*
- * @brief  Send packet to virtual flow accelerator. The attached actions to packet will be executed at accelerator  
+ * \brief Send packet to Virtual Flow Accelerator.The attached actions to the packet will be executed at accelerator  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @param[in] pkt_data_len - Length of the packet data sending to the accelelrator 
+ * \param[in] pkt_data_len - Length of the packet data sending to the accelelrator 
  *
- * @param[in] pkt_data  - Pointer to packet data 
+ * \param[in] pkt_data  - Pointer to packet data 
  *
- * @param[in] action_len - Length of actions attached to packet data that executed at accelerator
+ * \param[in] action_len - Length of actions attached to packet data that executed at accelerator
  *
- * @param[in] actions - Pointer to action buffer contains list of actions  
+ * \param[in] actions - Pointer to action buffer contains list of actions  
  *
- * @returns SUCCESS upon SUCCESS or FAILURE
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
 */
 int32_t g_flow_send_packet(struct g_flow_handle *handle,
                            uint32_t pkt_data_len,
@@ -823,13 +1295,13 @@ int32_t g_flow_send_packet(struct g_flow_handle *handle,
                            uint32_t action_len,
                            uint8_t  *actions);
 /*!
- * @brief Close a previously opened  virtual flow accelerator device  
+ * \brief Close a previously opened  Virtual Flow Accelerator device  
  *
- * @param[in] handle- virtual flow accelerator handle 
+ * \param[in] handle- Virtual Flow Accelerator handle 
  *
- * @returns SUCCESS upon SUCCESS or FAILURE
+ * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
- * @ingroup VIRTIO_FLOW
+ * \ingroup VIRTIO_FLOW
  */
 int32_t g_flow_device_close(struct g_flow_handle *handle);
 

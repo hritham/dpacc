@@ -79,8 +79,20 @@ enum g_flow_port_status_event {
 };
 #endif
 
+/*! Enums of packet received  reason */
+enum g_flow_reason_of_pkt_recv {
+
+     /** Packet recived because unavailability of flow entry in 
+      * Flow Accelerator to hanldle*/
+     G_FLOW_PKT_RECVD_NO_FLOW_ENTRY = 1,
+
+     /** Packet received because hit of action G_FLOW_AT_SEND_PKT_TO_APP 
+      * in the flow entry */
+     G_FLOW_PKT_RECVD_WITH_ACTION = 2,
+};
+
 /*! Enums of Flow removed reason */
-enum g_flow_flow_removed_reason {
+enum g_flow_reason_of_flow_remove {
 
      /** Due to inactivity flow removed*/
      G_FLOW_REMOVED_TIMEOUT = 0,
@@ -104,16 +116,42 @@ enum g_flow_response_status {
      G_FLOW_RESPONSE_STATUS_TIMEOUT =3  
 };
 
+/*! Enums of event type used to trigger statistics event to appliation */ 
+enum g_flow_stats_trigger_event_type {
+
+  /** Type to indicate send event to application after processing certain number of bytes data */
+  G_FLOW_AS_ET_BYTES 	= 1, 
+
+ /** Type to indicate send event to application after processing certain number of packets */
+  G_FLOW_AS_ET_PKTS	= 2  
+
+};
+
+/*! Enums of event mehtod used to trigger statistics event to appliation */ 
+enum g_flow_stats_trigger_event_method {
+
+    /** In this method, only one time sends event from accelerator to application.For example,
+     *  if event type is G_FLOW_AS_ET_BYTES, only one event to application will be sent after
+     *  processing configured bytes data count in the action. */
+    G_FLOW_AS_EM_ONCE   = 0, 
+    
+    /** In this method, the event will be sent multiple times periodically. For example, if event 
+     *  type is G_FLOW_AS_ET_PKTS, events will be sent periodically for every  configured packets
+     *  count in the action. */ 
+    G_FLOW_AS_EM_PERIODIC = 1 
+};
+
+
 /*! Enums of Flow Accelerator objects */
 enum g_flow_objects {
-    G_FLOW_OBJECT_METER = 0  /**< Flow Meter Object */
+    G_FLOW_OBJ_SHAPPING_N_RATE_LIMITING = 0  /**< Flow QoS Object */
 };
 
 /*! Enums of match fields , TBD of more fields*/
 enum g_flow_match_fields {
     G_FLOW_FIELD_IN_PORT_ID        = 0,  /* Input port. */
     G_FLOW_FIELD_IN_PHY_PORT_ID    = 1,  /* Physical input port. */
-    G_FLOW_FIELD_METADATA_ID       = 2,  /* Metadata passed between tables. */
+    G_FLOW_FIELD_METADATA_ID       = 2,  /* Metadata passed between packet processing stages. */
     G_FLOW_FIELD_ETH_DST_ID        = 3,  /* Ethernet destination address. */
     G_FLOW_FIELD_ETH_SRC_ID        = 4,  /* Ethernet source address. */
     G_FLOW_FIELD_ETH_TYPE_ID       = 5,  /* Ethernet frame type. */
@@ -136,34 +174,47 @@ enum g_flow_match_fields {
 /*! Enums of actions ,TBD more actions */
 enum g_flow_actions {
 
-     /** Set specific field value of the packet */
-     G_FLOW_AT_SET_PKT_FIELD = 0, 
-
-     /** Drop packet */
+     /** Drop packet, uses struct g_flow_action  with 'id' as G_FLOW_AT_DROP_PACKET */
      G_FLOW_AT_DROP_PACKET = 1,
+     
+     /** Set specific field G_FLOW_FIELD* value, it can any packet field and metadata,etc. 
+      *   uses struct g_flow_action_set_packet_field */
+     G_FLOW_AT_SET_PKT_FIELD = 2, 
 
-     /** Send the packet to next specified packet processing stage */
-     G_FLOW_AT_NEXT_PROC_STAGE    = 2, 
+     /** Send the packet to next specified packet processing stage
+      *  uses struct g_flow_action_send_to_proc_stage*/
+     G_FLOW_AT_NEXT_PROC_STAGE = 3, 
+
+     /** Action used to send packet to application
+      *  uses struct g_flow_action_send_pkt_to_app */
+     G_FLOW_AT_SEND_PKT_TO_APP = 4, 
 
      /** Trigger an event when packet/byte stats of flow entry reached some 
-         threshold value*/ 
-     G_FLOW_AT_TRIGGER_FLOW_STATS = 3, 
+         threshold value, uses struct g_flow_action_trigger_flow_stats_event */ 
+     G_FLOW_AT_TRIGGER_FLOW_STATS = 5, 
 
-     /** Packet Rate limiter action by using meter objects */
-     G_FLOW_AT_RATE_LIMIT    = 4, 
-
-     /** Set Prirority queue that used before transmitting packet on port */
-     G_FLOW_AT_SET_PRIORITY_QUEUE =5, 
-
-     /** Send packet to required port */
+     /** Send packet to required port, uses struct g_flow_action_xmit_on_port */
      G_FLOW_AT_XMIT_ON_PORT  = 6, 
+
+     /** TUNNELING ACTIONS, good to plan Generic tunneling TBD */
+     
+     /** RECIRCULATE ACTION, Resubmit the packet back to first processing stage, 
+      *  required after detunneling operation   TBD */ 
+
+     /** Packet Rate limiter action by using qos objects  TBD */
+     G_FLOW_AT_RATE_LIMIT    = 7, 
+
+     /** Set Prirority queue that used before transmitting packet on port  TBD */
+     G_FLOW_AT_SET_PRIORITY_QUEUE =8, 
+
+     /** Connection Tracking TBD */
+     G_FLOW_AT_CONN_TRACK = 9, 
 
    /*TBD push and pop tunnel headers*/
    /* TBD  G_FLOW_AT_COPY_FIELD    = 1, equal to set meta data from pkt 
       Copy between header and registers , need to bring packet registers field support*/
 };
-                  
-/*TBD Action Data-Structure, once agreed upon supported actions, will add data-structures*/
+ 
 
 /*! Packet Input port match field header*/
 #define G_FLOW_IN_PORT    G_FLOW_MATCH_HEADER(G_FLOW_IN_PORT_ID, 4)
@@ -249,7 +300,7 @@ struct g_flow_device_info {
    /** Flow Accelerator name, 
       *  Format is NAME_IN_STRING#Device_Ref_Index_number. The Device_Ref_Index_number
       *  is running sequence number starting with 0, it identifies device and must be
-      *  witin in the system. */
+      *  within in the system. */
      char flow_accel_name[G_FLOW_ACCEL_NAME_SIZE+1];
 
      /** Application name which actually openening Flow Accelerator */
@@ -295,6 +346,44 @@ struct g_flow_avail_devices_get_outargs {
      uint8_t b_more_devices;
 };
 
+
+/** \ingroup FLOW_ACCELERATOR
+ * \struct g_flow_packet_notification_inarg
+ * \brief paket details from Flow Acclerator inargs to g_flow_cbk_packet_received_fn() \n\n
+ */
+struct g_flow_packet_notification_inarg {
+
+     /** Packeting Processing stage ID from which packet received */
+     uint8_t  stage_id;
+
+     /** reason for receiving packet, as defined in G_FLOW_PKT_RECVD_* */
+     enum g_flow_reason_of_pkt_recv reason; 
+
+     /** Length packet data */
+     uint32_t packet_len; 
+
+     /** Pointer to packet data */
+     uint8_t  *packet_data; 
+
+     /** Length of application specific data, if any. Zero in case no application
+      *  specific data
+      */
+     uint32_t app_data_length;      
+     
+     /**Application specific data. NULL value if no application specific data is available*/
+     uint8_t  app_data[0] ;    
+
+     /** Application callback argument 1, it is 'packet_rcvd_cbk_arg1' that configured earlier 
+       * as part of registration callbacks,if any. NULL value if no callback argument
+       * is available */
+     void *cbk_arg1;
+
+     /** Application callback argument 2, it is 'packet_rcvd_cbk_arg2' that configured earlier 
+       * as part of  registration callbacks,if any. NULL value if no callback argument
+       * is available */
+     void *cbk_arg2;
+};
+
 /** ingroup FLOW_ACCELERATOR
 * \struct g_flow_handle
 * \brief Flow Accelerator device handle \n\n
@@ -308,6 +397,202 @@ struct g_flow_handle {
      /** Flow Accelerator handle */
      uint8_t handle[G_FLOW_HANDLE_SIZE]; 
 };
+
+
+/** ingroup FLOW_ACCELERATOR
+* \typedef g_flow_cbk_packet_received_fn
+* \brief Callback function to receive packet from Flow Acceletator 
+*
+* <b>Description</b>\n
+* The Flow Accelarator sends packet to application by using this callback. In general packet will 
+* sent to application if it is doesn't find flow entry to handle the packet,  means if it doesn't 
+* have any knowledge of how to handle the packet the packet will send to application. But by  
+* using explicit action in Flow Entry also athe packet will sent to Application. The explicit
+* action cases might be the case of local application required to receive all its packets, and
+* another is handlilng of inline acceleration. 
+*
+* \param[in] handle- Flow Accelerator handle  
+*
+* \param[in] in - Pointer to input structure as defined by 'struct g_flow_packet_notification_inarg' 
+*
+* \returns NONE 
+*/
+typedef void (*g_flow_cbk_packet_received_fn) (
+        struct g_flow_handle *handle,
+	struct g_flow_packet_notification_inarg *in);
+
+/*! Table removed flow entry information*/
+
+/** \ingroup FLOW_ACCELERATOR
+ * \struct g_flow_removed_flow_entry_inarg
+ * \brief Flow entry removed from a processing stage in Flow Acclerator instance inargs 
+ *  to callback\r\n
+ */
+struct g_flow_removed_flow_entry_inarg {
+
+        /**< Packet Processing stage ID from which flow entry removed*/
+        uint8_t  stage_id; 
+
+        /** Flow removed reason as defined in G_FLOW_REMOVED* */
+        enum g_flow_reason_of_flow_remove reason; 
+
+        /** Priority of the flow entry */
+        uint32_t priority; 
+
+        /** Length of 'match_fields' buffer details as part of flow entry */
+        uint32_t match_field_len; 
+
+        /** Pointer to match fields buffer contains list of match field values,
+         Each field is defined with 'struct g_flow_match_field'*/
+        uint8_t  *match_fields; 
+
+        /** Application callback argument 1, it is 'flow_rmvd_cbk_arg1' that configured earlier 
+          * as part of  registration callbacks, if any. NULL value if no callback argument
+          * is available */
+        void *cbk_arg1;
+
+        /** Application callback argument 2, it is 'flow_rmvd_cbk_arg2' that configured earlier 
+          * as part of registration callbacks, if any. NULL value if no callback argument
+          * is available */
+        void *cbk_arg2;
+};
+
+/** ingroup FLOW_ACCELERATOR
+* \typedef g_flow_cbk_flow_removed_fn
+* \brief Callback function to receive flow entry remove details. 
+*
+* <b>Description</b>\n
+* Application can provide callback function to receive details of flow entry removed 
+* from a processing stage in Flow Accelerator. As part of g_flow_proc_stage_add() 
+* configuration, application registers this callback. For every flow removed in 
+* the accelrator, this callback function will be invoked.
+*
+* \param[in] handle- Flow Accelerator handle  
+*
+* \param[in] in - Pointer to input structure as defined by 'struct g_flow_removed_flow_entry_inarg' 
+*
+* \returns NONE 
+*/
+typedef void (*g_flow_cbk_flow_removed_fn) (
+        struct g_flow_handle *handle,
+	struct g_flow_removed_flow_entry_inarg *in);
+
+/** \ingroup FLOW_ACCELERATOR
+ * \struct g_flow_recv_flow_stats_event_inarg
+ * \brief Flow entry removed from a processing stage in Flow Acclerator instance inargs to callback\r\n
+ */
+struct g_flow_recv_flow_stats_event_inarg {
+
+     /** Packet Processing stage ID from which the event revieved*/
+     uint8_t  stage_id;
+
+     /** Priority of the flow entry */
+     uint32_t priority;
+
+     /** Length of 'match_fields' buffer details as part of flow entry */
+     uint32_t match_field_len;
+
+     /** Pointer to match fields buffer contains list of match field values,
+     Each field is defined with 'struct g_flow_match_field'*/
+     uint8_t  *match_fields;
+
+     /** Event type for which the event recieved, one of G_FLOW_AS_ET_* value */
+     uint8_t  event_type;
+ 
+     /** Event method for which the event recieved, one of G_FLOW_AS_EM_* value */
+     uint8_t  event_method; 
+
+     /** Length of application specific data, if any. Zero in case no application
+      *  specific data
+      */
+     uint32_t app_data_length;      
+     
+     /**Application specific data. NULL value if no application specific data available*/
+     uint8_t  app_data[0] ;    
+
+     /** Application callback argument 1, it is 'flow_stats_event_rcvd_cbk_arg1' that configured
+       * earlier as part of registration callbacks,if any. NULL value if no callback argument
+       * is available */
+     void *cbk_arg1;
+
+     /** Application callback argument 2, it is 'flow_stats_event_rcvd_cbk_arg2' that configured 
+       * earlier as part of registration callbacks,if any. NULL value if no callback argument
+       * is available */
+      void *cbk_arg2;
+};
+
+
+/** ingroup FLOW_ACCELERATOR
+* \typedef g_flow_cbk_recv_flow_stats_event
+* \brief Callback function to receive flow stats events  
+
+* <b>Description</b>\n
+* Flow Acceleratr will send events when packet/byte count of flow entry  reached configured 
+* threshold value. Application like IPSec may interest callback to recieve these events. 
+*
+* \param[in] handle- Flow Accelerator handle  
+*
+* \param[in] in - Pointer to input structure as defined by 'struct g_flow_recv_flow_stats_event_inarg' 
+*
+* \returns NONE 
+*/
+typedef void (*g_flow_cbk_recv_flow_stats_event_fn) (
+        struct g_flow_handle *handle,
+	struct g_flow_recv_flow_stats_event_inarg *in);
+
+
+/** \ingroup FLOW_ACCELERATOR
+ * \struct g_flow_notification_hooks_inargs
+ * \brief Inargs to register callback functions to receive notifications API g_flow_notification_hooks_register()\n\n
+ */
+struct g_flow_notification_hooks_inargs
+{
+     /** Application name which registering callbacks  */
+     char application_name[G_FLOW_ACCEL_APP_NAME_SIZE +1];
+
+     /** Packet received callback function, NULL in case no callback function is required */
+     struct g_flow_cbk_packet_received_fn  *pkt_rcvd_fn;
+
+     /** Flow Removed callback function, NULL in case no callback function is required */
+     struct g_flow_cbk_flow_removed_fn *flow_rmvd_fn;
+
+     /** Flow stats event receive callback function, NULL in case no callback function 
+      *  is required */
+     struct g_flow_cbk_recv_flow_stats_event_fn *flow_stats_event_fn;
+	
+     /** Packet received callback function argument 1 that used by applications.
+      *  Same will be passed to callback function g_flow_cbk_packet_received_fn 
+      *  NULL incase not requied*/
+     void *packet_rcvd_cbk_arg1;
+
+     /** Packet received callback function argument 2 that used by applications 
+      *  Same will be passed to callback function g_flow_cbk_packet_received_fn 
+      *  NULL incase not requied*/
+     void *packet_rcvd_cbk_arg2;
+
+     /** Flow removed received callback function arguments 1 that used by applications 
+      *  Same will be passed to callback function g_flow_cbk_flow_removed_fn 
+      *  NULL incase not requied*/
+     void *flow_rmvd_cbk_arg1;
+
+     /** Flow removed received callback function arguments 2 that used by applications
+      *  Same will be passed to callback function g_flow_cbk_flow_removed_fn 
+      *  NULL incase not requied*/
+     void *flow_rmvd_cbk_arg2;
+
+     /** Packet received callback function argument 1 that used by applications.
+      *  Same will be passed to callback function g_flow_cbk_recv_flow_stats_event_fn 
+      *  NULL incase not requied*/
+     void *flow_stats_event_rcvd_cbk_arg1;
+
+     /** Flow stats event  received callback function argument 2 that used by applications 
+      *  Same will be passed to callback function g_flow_cbk_recv_flow_stats_event_fn 
+      *  NULL incase not requied*/
+     void *flow_stats_event_rcvd_cbk_arg2;
+
+
+};
+
 
 typedef struct g_flow_device_info g_flow_open_flow_accel_inargs_t;
 
@@ -447,133 +732,6 @@ struct g_flow_match_field_info {
 };
 
 /** \ingroup FLOW_ACCELERATOR
- * \struct g_flow_packet_notification_inarg
- * \brief paket details from Flow Acclerator inargs to g_flow_cbk_packet_received_fn() \n\n
- */
-struct g_flow_packet_notification_inarg {
-
-     /** Packeting Processing stage ID from which packet received */
-     uint8_t  stage_id;
-
-     /** Length packet data */
-     uint32_t packet_len; 
-
-     /** Pointer to packet data */
-     uint8_t  *packet_data; 
-
-     /** Application callback argument 1 that configured earlier as part of 
-       * registration of callbacks */
-     void *cbk_arg1;
-
-     /** Application callback argument 2 that configured earlier as part of 
-       * registration of callbacks*/
-     void *cbk_arg2;
-};
-
-/** ingroup FLOW_ACCELERATOR
-* \typedef g_flow_cbk_packet_received_fn
-* \brief Callback function to receive packet from Flow Acceletator 
-*
-* <b>Description</b>\n
-* The accelarator sends packet to application by using this callback. In general 
-* accelerator sends packet to application incase if it doesn't have any knowledge 
-* about handling of the packet it received. That is packet will be sent if accelerator
-* is not programmed with the flow entry. The packet will also be send to the 
-* application in case of application needs to receieve every packet. 
-*
-* \param[in] handle- Flow Accelerator handle  
-*
-* \param[in] in - Pointer to input structure as defined by 'struct g_flow_packet_notification_inarg' 
-*
-* \returns NONE 
-*/
-typedef void (*g_flow_cbk_packet_received_fn) (
-        struct g_flow_handle *handle,
-	struct g_flow_packet_notification_inarg *in);
-
-/*! Table removed flow entry information*/
-
-/** \ingroup FLOW_ACCELERATOR
- * \struct g_flow_removed_flow_entry_inarg
- * \brief Flow entry removed from a processing stage in Flow Acclerator instance inargs to callback\r\n
- */
-struct g_flow_removed_flow_entry_inarg {
-
-        /**< Packet Processing stage ID from which flow entry removed*/
-        uint8_t  stage_id; 
-
-        /** Flow removed reason as defined in G_FLOW_REMOVED* */
-        enum g_flow_flow_removed_reason reason; 
-
-        /** Priority of the flow entry */
-        uint32_t priority; 
-
-        /** Length of 'match_fields' buffer details as part of flow entry */
-        uint32_t match_field_len; 
-
-        /** Pointer to match fields buffer contains list of match field values,
-         Each field is defined with 'struct g_flow_match_field'*/
-        uint8_t  *match_fields; 
-
-        /** Application callback argument 1 that configured earlier as part of 
-          * registration of callbacks*/
-        void *cbk_arg1;
-
-        /** Application callback argument 2 that configured earlier as part of
-          * registration of callbacks*/
-        void *cbk_arg2;
-};
-
-/** ingroup FLOW_ACCELERATOR
-* \typedef g_flow_cbk_flow_removed_fn
-* \brief Callback function to receive flow entry remove details. 
-*
-* <b>Description</b>\n
-* Application can provide callback function to receive details of flow entry removed 
-* from a processing stage in Flow Accelerator. As part of g_flow_proc_stage_add() 
-* configuration, application registers this callback. For every flow removed in 
-* the accelrator, this callback function will be invoked.
-*
-* \param[in] handle- Flow Accelerator handle  
-*
-* \param[in] in - Pointer to input structure as defined by 'struct g_flow_removed_flow_entry_inarg' 
-*
-* \returns NONE 
-*/
-typedef void (*g_flow_cbk_flow_removed_fn) (
-        struct g_flow_handle *handle,
-	struct g_flow_removed_flow_entry_inarg *in);
-
-/** \ingroup FLOW_ACCELERATOR
- * \struct g_flow_stage_notification_hooks
- * \brief Configuration of callbacks for the packet processing stage adding to Flow Acclerator instance\n\n
- */
-struct g_flow_stage_notification_hooks
-{
-     /** Packet received callback function, NULL in case no call back function is required */
-     struct g_flow_cbk_packet_received_fn  *pkt_rcvd_fn;
-
-     /** Flow Removed Callback function, NULL in case no call back function is required */
-     struct g_flow_cbk_flow_removed_fn *flow_rmvd_fn;
-	
-     /** Packet received callback function argument 1 that used by applications.
-      *  Same will be as part of call back function g_flow_cbk_packet_received_fn */
-     void *packet_rcvd_cbk_arg1;
-
-     /** Packet received callback function argument 2 that used by applications 
-      *  Same will be as part of call back function g_flow_cbk_packet_received_fn */
-     void *packet_rcvd_cbk_arg2;
-
-     /** Flow removed received callback function arguments 1 that used by applications 
-      *  Same will be as part of call back function g_flow_cbk_flow_removed_fn */
-     void *flow_rmvd_cbarg_arg1;
-
-     /** Flow removed received callback function arguments 2 that used by applications
-      *  Same will be as part of call back function g_flow_cbk_flow_removed_fn */
-     void *flow_rmvd_cbarg_arg2;
-};
-
-/** \ingroup FLOW_ACCELERATOR
  * \struct g_flow_stage_config_inargs
  * \brief Configuration values of adding processing stage to Flow Acclerator instance\n\n
  */
@@ -599,9 +757,6 @@ struct g_flow_stage_config_inargs {
     /** Array of pointers, where each points to match fields infomation 
         as defined by 'struct g_flow_match_field_info'*/
     struct g_flow_match_field_info *match_field_info;
-
-    /** Pointer to input structure containing notitication callback function and arguments*/
-    struct g_flow_stage_notification_hooks *cbk_hook_fns; 
 };
 
 /** \ingroup FLOW_ACCELERATOR
@@ -691,29 +846,9 @@ struct g_flow_stages_get_inargs {
      void *cbk_arg2;
 };
 
-#if 0
-/*! Structure to hold notification from Flow Accelerator callback functions, 
-    The api g_flow_notification_hooks_register()
-    is used to register callback functions  */
-struct g_flow_notification_hooks {
-
-        struct g_flow_cbk_port_status_change_fn *port_status_change_fn;
-        /**< Whenever change in the status of the ports attached virtio flow accelrator, 
-           this callback function will be called*/
-
-	/**< Accelerator assocated callback function arguments */
-	void *acclerator_assocated_rcvd_cbk_arg1;
-	void *acclerator_assocated_rcvd_cbk_arg2;
-
-	/**< Port status change callback function arguments */
-	void *port_status_change_cbk_arg1;
-	void *port_status_change_cbk_arg2;
-};
-#endif
-
 /** ingroup FLOW_ACCELERATOR
 * \struct g_flow_match_field
-* \brief  Format of each match field value defined as part of match_fileds buffer in the table flow entry 
+* \brief Format of each match field value defined as part of match_fileds buffer in the table flow entry 
 */
 struct g_flow_match_field {
 
@@ -726,21 +861,157 @@ struct g_flow_match_field {
      /** Length of match field value, it will be doubled in case of mask value present  */
      uint16_t length:8;
 
+    /** Used for alignment */
+     uint8_t pad[6];
+
      /** Value of match field. Along with match field value 'mask value'  will also 
       *  present after match field if 'mask' value is TRUE*/ 
      uint8_t value[0];
 };
 
 /** ingroup FLOW_ACCELERATOR
-* \struct g_flow_action
-* \brief Format of each action value defined as part of actions bufffer in the flow entry 
+* \struct g_flow_action_set_packet_field
+* \brief Flow Accelerator action definition that used to set packet field value
 */
-struct g_flow_action 
+struct g_flow_action_set_packet_field
 {
+     /** Action ID, set with value G_FLOW_AT_SET_PKT_FIELD */
+     uint32_t id; 
+
+     /** Length value of the action, it is  
+      * sizeof struct g_flow_action_set_packet_field + 'length' value in 'match_field' 
+      */
+     uint32_t length;
+
+     /** Field details to which seting a value */
+     struct g_flow_match_field match_field;
+};
+
+/** ingroup FLOW_ACCELERATOR
+* \struct g_flow_action_send_to_proc_stage
+* \brief Flow Accelerator action definition that used to send packet to specified proccesing stage  
+*/
+struct g_flow_action_send_to_proc_stage
+{
+     /** Action ID,  it will set with G_FLOW_AT_NEXT_PROC_STAGE */
+     uint32_t id; 
+
+     /** Length value will be set to 16 */
+     uint32_t length;
+
+     /** ID of processing stage for which send the packet */
+     uint8_t  stage_id; 
+
+    /** Used for alignment */
+     uint8_t pad[7];
+};
+
+
+/** ingroup FLOW_ACCELERATOR
+* \struct g_flow_action_xmit_on_port
+* \brief Flow Accelerator action definition that used to set packet fields  
+*/
+struct g_flow_action_xmit_on_port 
+{
+     /** Action ID,  it will set with G_FLOW_AT_XMIT_ON_PORT */
+     uint32_t id; 
+
+     /** Length value will be set to 16 */
+     uint32_t length;
+
+     /** Id of the port on which packet transmitted */
+     uint32_t port_id;
+
+    /** Used for alignment */
+     uint8_t pad[4];
+};
+
+/** ingroup FLOW_ACCELERATOR
+* \struct g_flow_action_send_pkt_to_app
+* \brief Action used to send packet to application.
+* <b>description <\b>
+* This action is used to send packet explicitly from Flow Accelerator to application. This
+* handle inline acclertaion functionality, the application works inline with the Flow 
+* Accelerator. That is after offloading some function to Flow Accelerator, the application 
+* might required to take packet back for further processing. If any local application needs
+* to receive all its packets, it pushes flow entry with this action. This action MUST be 
+* used as last action in the action values in the flow entry. 
+*/
+struct g_flow_action_send_pkt_to_app
+{
+    /** Action ID,  it will set with G_FLOW_AT_SEND_PKT_TO_APP */
+    uint32_t id; 
+
+    /** Length value of the action, it is  
+     *  sizeof struct g_flow_action_send_pkt_to_app + 'app_data_length' 
+     */
+     uint32_t length;
+
+     /** Just for allgiement purpose */
+     uint8_t pad[4];
+
+     /** Length of application specific data, if no application specific data is 
+     *   prerent, this value will be zero.
+     */
+     uint32_t app_data_length;      
+
+     /** Optional application specific data. If available, send 'app_data' along with
+      *  the packet to application. The 'app_data' is opaque for the flow api */
+     uint8_t  app_data[0] ;    
+};
+
+
+/** ingroup FLOW_ACCELERATOR
+* \struct g_flow_action_trigger_flow_stats_event
+* \brief Action used to triger packet/byte stats event to application.
+* <b>description <\b>
+* Trigger an event to application by using 'g_flow_cbk_recv_flow_stats_event_fn' in case of 
+* packet/byte count of flow entry  reached configured threshold value 'event_count'. That is 
+* application  will be intimated after reaching 'event_count' value. The event also carries 
+* application specific data as defined in 'app_data' field. 
+*/
+struct g_flow_action_trigger_flow_stats_event
+{
+     /** Action ID, set with value G_FLOW_AT_TRIGGER_FLOW_STATS */
+     uint32_t id; 
+
+     /** Length value of the action, it is  
+      * sizeof struct g_flow_action_trigger_flow_stats_event + 'app_data_length' 
+      */
+     uint32_t length;
+
+     /** Event type, one of G_FLOW_AS_ET_* value */
+     uint8_t  event_type;
+ 
+     /** Event method, one of G_FLOW_AS_EM_* value */
+     uint8_t  event_method; 
+
+     /** Threshold  value at which to send event */
+     uint32_t event_count;
+
+     /** Just for allgiement purpose */
+     uint8_t pad[6];
+
+     /** Length of application specific data, if no application specific data is 
+     *   prerent, this value will be zero.
+     */
+     uint32_t app_data_length;      
+     
+     /** Optional application specific data. If available, send as part of event to 
+      *  application, It is a opaque for the flow api */
+     uint8_t  app_data[0] ;    
+
+};
+
+/** ingroup FLOW_ACCELERATOR
+* \struct g_flow_action
+* \brief Header of each action value defined as part of actions bufffer in the flow entry 
+*/
+struct g_flow_action {
      /** Action ID, one of G_FLOW_AT_* value */
      uint32_t id; 
 
-     /** Length of action value */ 
+     /** Length of total action value which includes  header fields 'id' and 'length'*/
      uint32_t length;
 
      /** Action value, each action will be of diffeent size */ 
@@ -791,7 +1062,7 @@ struct g_flow_stage_add_n_mod_flow_entry_inargs {
      struct g_flow_stage_flow_entry_selector *flow_selector; 
  
      /** As part of flow entry, it is used to store application specific information which is 
-      *  opque to flow api*/
+      *  opaque to flow api*/
      uint64_t user_opq_val; 
  
      /** Mask used to restrict the 'user_opq_val' bits,*/
@@ -942,12 +1213,12 @@ struct g_flow_stage_get_flow_entires_inarg {
 };
 
 /** ingroup FLOW_ACCELERATOR
-* \struct g_flow_meter_object
-* \brief Meter object, data-structure used for Object type 'G_FLOW_OBJECT_METER' 
+* \struct g_flow_qos_object
+* \brief Oos object, data-structure used for Object type 'G_FLOW_OBJ_SHAPPING_N_RATE_LIMITING' 
 */
-struct g_flow_meter_object {
+struct g_flow_qos_object {
 
-     /** Id of the meter object, it MUST be unique value */
+     /** Id of the qos object, it MUST be unique value */
      uint32_t id; 
 
      /*TBD of adding more fields */
@@ -1194,27 +1465,17 @@ int32_t g_flow_avail_devices_get_info(
 	struct g_flow_avail_devices_get_inargs *in,
 	struct g_flow_avail_devices_get_outargs *out);
 
-#if 0
 /*!
- * \brief Register for notifications from Flow Accelerator
+ * \brief Application register callbacks to receive notifications from flow accelerator
  *
- * \param[in] flow_accel_name- Flow Accelerator name to which registering
- *                             callback functions 
- * \param[in] application_name - Application which registering with Flow Accelerator 
- *
- * \param[in]  in - Pointer to input structure containing notitication 
- *                  callback function and arguments.
- *                  NULL is passed for the functions that are registering.
+ * \param[in] in - Pointer to input structure
  *
  * \returns G_FLOW_SUCCESS upon success or G_FLOW_FAILURE
  *
  * \ingroup FLOW_ACCELERATOR
  */
 int32_t g_flow_notification_hooks_register (
-        char *flow_accel_name,
-        char *applicaton_name,
-	const struct g_flow_notification_hooks *in);
-#endif
+	struct g_flow_notification_hooks_inargs *in);
 
 /*! 
  * \brief Open an flow acclerator device.
